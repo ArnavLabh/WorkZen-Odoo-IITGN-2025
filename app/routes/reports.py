@@ -196,3 +196,190 @@ def payroll():
                          total_net=total_net,
                          paid_count=paid_count)
 
+
+@bp.route('/salary-statement')
+@login_required
+@role_required(['Admin', 'Payroll Officer'])
+def salary_statement():
+    # Only Admin and Payroll Officer can access salary statement report
+    employee_id = request.args.get('employee_id', '')
+    year_filter = request.args.get('year', '')
+    
+    # Get employees for dropdown
+    employees = User.query.filter_by(role='Employee').order_by(User.name).all()
+    
+    # Get years for dropdown (last 5 years)
+    current_year = datetime.now().year
+    years = list(range(current_year - 4, current_year + 1))
+    
+    payrolls = []
+    selected_employee = None
+    annual_summary = None
+    
+    if employee_id and year_filter:
+        # Find employee
+        selected_employee = User.query.get(employee_id)
+        
+        if selected_employee:
+            # Get payrolls for the year
+            payrolls = Payroll.query.filter_by(
+                user_id=selected_employee.id,
+                year=int(year_filter)
+            ).order_by(Payroll.month).all()
+            
+            # Calculate annual summary
+            if payrolls:
+                annual_summary = {
+                    'total_gross': sum(p.gross_salary for p in payrolls),
+                    'total_deductions': sum(p.total_deductions for p in payrolls),
+                    'total_net': sum(p.net_salary for p in payrolls),
+                    'months_paid': len(payrolls)
+                }
+    
+    return render_template('reports/salary_statement.html',
+                         employees=employees,
+                         years=years,
+                         payrolls=payrolls,
+                         selected_employee=selected_employee,
+                         annual_summary=annual_summary,
+                         employee_id=employee_id,
+                         year_filter=year_filter)
+
+@bp.route('/salary-statement/pdf')
+@login_required
+@role_required(['Admin', 'Payroll Officer'])
+def salary_statement_pdf():
+    employee_id = request.args.get('employee_id', '')
+    year_filter = request.args.get('year', '')
+    
+    if not employee_id or not year_filter:
+        flash('Please select employee and year', 'danger')
+        return redirect(url_for('reports.salary_statement'))
+    
+    selected_employee = User.query.get_or_404(employee_id)
+    payrolls = Payroll.query.filter_by(
+        user_id=selected_employee.id,
+        year=int(year_filter)
+    ).order_by(Payroll.month).all()
+    
+    if not payrolls:
+        flash('No salary data found for selected employee and year', 'warning')
+        return redirect(url_for('reports.salary_statement'))
+    
+    from app.models import CompanySettings
+    from flask import make_response
+    import io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    
+    # Get company name
+    company_name = CompanySettings.get_setting('company_name', 'WorkZen')
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#0891b2')
+    )
+    
+    # Build PDF content
+    story = []
+    
+    # Company Header
+    story.append(Paragraph(f"<b>{company_name}</b>", title_style))
+    story.append(Paragraph(f"Annual Salary Statement - {year_filter}", styles['Heading2']))
+    story.append(Spacer(1, 20))
+    
+    # Employee Info
+    employee_data = [
+        ['Employee Name:', selected_employee.name],
+        ['Employee ID:', selected_employee.employee_id],
+        ['Department:', selected_employee.department or 'N/A'],
+        ['Year:', year_filter],
+        ['Report Generated:', datetime.now().strftime('%d %B %Y')]
+    ]
+    
+    employee_table = Table(employee_data, colWidths=[2*inch, 3*inch])
+    employee_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    story.append(employee_table)
+    story.append(Spacer(1, 20))
+    
+    # Monthly Breakdown
+    story.append(Paragraph("<b>Monthly Breakdown</b>", styles['Heading3']))
+    
+    month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    
+    monthly_data = [['Month', 'Gross Salary (₹)', 'Deductions (₹)', 'Net Salary (₹)']]
+    
+    total_gross = 0
+    total_deductions = 0
+    total_net = 0
+    
+    for payroll in payrolls:
+        monthly_data.append([
+            month_names[payroll.month],
+            f"{payroll.gross_salary:,.2f}",
+            f"{payroll.total_deductions:,.2f}",
+            f"{payroll.net_salary:,.2f}"
+        ])
+        total_gross += payroll.gross_salary
+        total_deductions += payroll.total_deductions
+        total_net += payroll.net_salary
+    
+    # Add totals row
+    monthly_data.append(['', '', '', ''])
+    monthly_data.append([
+        'TOTAL',
+        f"{total_gross:,.2f}",
+        f"{total_deductions:,.2f}",
+        f"{total_net:,.2f}"
+    ])
+    
+    monthly_table = Table(monthly_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+    monthly_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#0891b2')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (1, 1), (-1, -2), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -2), 1, colors.black),
+        ('LINEBELOW', (0, -1), (-1, -1), 2, colors.white),
+    ]))
+    
+    story.append(monthly_table)
+    
+    # Build PDF
+    doc.build(story)
+    
+    # Return PDF
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    buffer.close()
+    
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=salary_statement_{selected_employee.employee_id}_{year_filter}.pdf'
+    
+    return response
