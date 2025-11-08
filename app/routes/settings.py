@@ -124,3 +124,39 @@ def change_password():
     
     return render_template('settings/change_password.html')
 
+@bp.route('/company', methods=['GET', 'POST'])
+@login_required
+def company_settings():
+    from app.models import CompanySettings
+    from app.utils.decorators import role_required
+    
+    # Only Admin can access company settings
+    if current_user.role != 'Admin':
+        from flask import abort
+        abort(403)
+    
+    if request.method == 'POST':
+        required_hours = request.form.get('required_working_hours', '8')
+        
+        try:
+            hours = float(required_hours)
+            if hours <= 0 or hours > 24:
+                flash('Working hours must be between 0 and 24', 'danger')
+            else:
+                CompanySettings.set_setting(
+                    'required_working_hours',
+                    hours,
+                    'Required working hours per day for full attendance',
+                    current_user.id
+                )
+                db.session.commit()
+                flash('Company settings updated successfully!', 'success')
+                return redirect(url_for('settings.company_settings'))
+        except ValueError:
+            flash('Invalid working hours value', 'danger')
+    
+    # Get current settings
+    required_hours = CompanySettings.get_setting('required_working_hours', '8')
+    
+    return render_template('settings/company.html', required_hours=required_hours)
+

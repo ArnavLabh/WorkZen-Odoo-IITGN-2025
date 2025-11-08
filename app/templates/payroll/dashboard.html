@@ -7,7 +7,7 @@
     <div class="row">
         <div class="col-12">
             <h2 class="mb-4">Payroll Dashboard</h2>
-            
+
             <!-- Quick Actions -->
             <div class="row mb-4">
                 <div class="col-md-12">
@@ -18,7 +18,8 @@
                                 <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
                                     <i class="fas fa-plus-circle"></i> Generate Payroll
                                 </a>
-                                <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-outline-primary">
+                                <a href="{{ url_for('payroll.salary_structure_list') }}"
+                                    class="btn btn-outline-primary">
                                     <i class="fas fa-cash-register"></i> Manage Salary Structures
                                 </a>
                             </div>
@@ -26,7 +27,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Payrun History -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -48,7 +49,8 @@
                                 <tr>
                                     <td>
                                         <strong>
-                                            {% set month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+                                            {% set month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
+                                            'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
                                             {{ month_names[payrun.month] }} {{ payrun.year }}
                                         </strong>
                                     </td>
@@ -58,7 +60,8 @@
                                     <td>{{ payrun.creator.name if payrun.creator else 'N/A' }}</td>
                                     <td>{{ payrun.created_at.strftime('%d %b %Y') }}</td>
                                     <td>
-                                        <a href="{{ url_for('payroll.generate', month=payrun.month, year=payrun.year) }}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{{ url_for('payroll.generate', month=payrun.month, year=payrun.year) }}"
+                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i> View
                                         </a>
                                     </td>
@@ -72,7 +75,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <!-- Charts Section -->
             <div class="row">
                 <div class="col-md-6 mb-4">
@@ -81,8 +84,10 @@
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="card-title mb-0">Employer Cost</h5>
                                 <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary active" onclick="showEmployerCostChart('monthly')">Monthly</button>
-                                    <button type="button" class="btn btn-outline-primary" onclick="showEmployerCostChart('annual')">Annual</button>
+                                    <button type="button" class="btn btn-outline-primary active"
+                                        onclick="showEmployerCostChart('monthly')">Monthly</button>
+                                    <button type="button" class="btn btn-outline-primary"
+                                        onclick="showEmployerCostChart('annual')">Annual</button>
                                 </div>
                             </div>
                             <div style="height: 300px;">
@@ -91,7 +96,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-md-6 mb-4">
                     <div class="card">
                         <div class="card-body">
@@ -109,37 +114,80 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// Employer Cost Chart
-const employerCostMonthly = {{ employer_cost_monthly | tojson }};
-const employerCostAnnual = {{ employer_cost_annual | tojson }};
-let employerCostChart;
+    // Employer Cost Chart
+    const employerCostMonthly = {{ employer_cost_monthly | tojson }};
+    const employerCostAnnual = {{ employer_cost_annual | tojson }};
+    let employerCostChart;
 
-function showEmployerCostChart(type) {
-    const ctx = document.getElementById('employerCostChart').getContext('2d');
-    
-    if (employerCostChart) {
-        employerCostChart.destroy();
+    function showEmployerCostChart(type) {
+        const ctx = document.getElementById('employerCostChart').getContext('2d');
+
+        if (employerCostChart) {
+            employerCostChart.destroy();
+        }
+
+        let labels, data;
+        if (type === 'monthly') {
+            labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            data = employerCostMonthly.map(item => item.cost);
+        } else {
+            labels = employerCostAnnual.map(item => item.year);
+            data = employerCostAnnual.map(item => item.cost);
+        }
+
+        employerCostChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Employer Cost (₹)',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return '₹' + value.toLocaleString();
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return 'Cost: ₹' + context.parsed.y.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
-    
-    let labels, data;
-    if (type === 'monthly') {
-        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        data = employerCostMonthly.map(item => item.cost);
-    } else {
-        labels = employerCostAnnual.map(item => item.year);
-        data = employerCostAnnual.map(item => item.cost);
-    }
-    
-    employerCostChart = new Chart(ctx, {
-        type: 'bar',
+
+    // Employee Count Chart
+    const employeeCountMonthly = {{ employee_count_monthly | tojson }};
+    const ctx2 = document.getElementById('employeeCountChart').getContext('2d');
+    new Chart(ctx2, {
+        type: 'line',
         data: {
-            labels: labels,
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
             datasets: [{
-                label: 'Employer Cost (₹)',
-                data: data,
-                backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
+                label: 'Employee Count',
+                data: employeeCountMonthly.map(item => item.count),
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
             }]
         },
         options: {
@@ -149,57 +197,14 @@ function showEmployerCostChart(type) {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function(value) {
-                            return '₹' + value.toLocaleString();
-                        }
-                    }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Cost: ₹' + context.parsed.y.toLocaleString();
-                        }
+                        stepSize: 1
                     }
                 }
             }
         }
     });
-}
 
-// Employee Count Chart
-const employeeCountMonthly = {{ employee_count_monthly | tojson }};
-const ctx2 = document.getElementById('employeeCountChart').getContext('2d');
-new Chart(ctx2, {
-    type: 'line',
-    data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-        datasets: [{
-            label: 'Employee Count',
-            data: employeeCountMonthly.map(item => item.count),
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderColor: 'rgba(75, 192, 192, 1)',
-            borderWidth: 2,
-            fill: true,
-            tension: 0.4
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
-                }
-            }
-        }
-    }
-});
-
-// Initialize with monthly view
-showEmployerCostChart('monthly');
+    // Initialize with monthly view
+    showEmployerCostChart('monthly');
 </script>
 {% endblock %}

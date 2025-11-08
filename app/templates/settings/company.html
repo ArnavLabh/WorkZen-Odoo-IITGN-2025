@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Company Settings - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h4 class="mb-0">
+            <i class="fas fa-cog text-primary"></i> Company Settings
+        </h4>
+    </div>
+    
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('settings.company_settings') }}">
+            <h5 class="mb-3">Attendance Settings</h5>
+            
+            <div class="form-group">
+                <label class="form-label" for="required_working_hours">
+                    <i class="fas fa-clock"></i> Required Working Hours Per Day
+                </label>
+                <input type="number" 
+                       class="form-control" 
+                       id="required_working_hours" 
+                       name="required_working_hours" 
+                       value="{{ required_hours }}" 
+                       step="0.5" 
+                       min="1" 
+                       max="24" 
+                       required>
+                <small class="form-text text-muted">
+                    This determines full day attendance. 
+                    <br>• 100% of this value = Full Day
+                    <br>• 50-75% of this value = Half Day
+                    <br>• Less than 50% = Absent
+                </small>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Example:</strong> If set to 8 hours:
+                <ul class="mb-0 mt-2">
+                    <li>8+ hours worked = Full Day (Present)</li>
+                    <li>4-6 hours worked = Half Day</li>
+                    <li>Less than 4 hours = Absent</li>
+                </ul>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Settings
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

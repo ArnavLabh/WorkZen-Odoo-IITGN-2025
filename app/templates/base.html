@@ -142,6 +142,15 @@
                 </li>
                 {% endif %}
                 
+                {% if current_user.role == 'Admin' %}
+                <li class="sidebar-item">
+                    <a href="{{ url_for('settings.company_settings') }}" class="sidebar-link {% if request.endpoint == 'settings.company_settings' %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                {% endif %}
+                
 
             </ul>
         </aside>

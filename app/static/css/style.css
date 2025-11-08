@@ -920,3 +920,49 @@ a:hover {
         padding: 0.75rem;
     }
 }
+
+
+/* Employee Card Grid Improvements */
+.employee-card-hover {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.employee-card-hover:hover {
+    border-color: var(--primary-color);
+}
+
+/* Profile and Time Off Consistency */
+.card-header.bg-white {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.nav-tabs .nav-link {
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+}
+
+/* Improved Form Spacing */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+/* Better Button Spacing */
+.d-flex.gap-2 > * {
+    margin-right: 0.5rem;
+}
+
+.d-flex.gap-2 > *:last-child {
+    margin-right: 0;
+}
+
+/* Card Body Consistency */
+.card-body.border-bottom {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}

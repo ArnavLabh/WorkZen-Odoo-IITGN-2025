@@ -115,7 +115,28 @@ class Attendance(db.Model):
                 i += 1
         
         self.working_hours = total_hours
+        
+        # Update status based on working hours and company settings
+        self.update_status_from_hours()
+        
         return self.working_hours
+    
+    def update_status_from_hours(self):
+        """Update attendance status based on working hours and company settings"""
+        from app.models import CompanySettings
+        
+        # Get required working hours from settings (default 8)
+        required_hours = float(CompanySettings.get_setting('required_working_hours', '8'))
+        
+        if self.working_hours >= required_hours * 0.75:
+            # 75% or more = Full Day (Present)
+            self.status = 'Present'
+        elif self.working_hours >= required_hours * 0.5:
+            # 50-75% = Half Day
+            self.status = 'Half Day'
+        else:
+            # Less than 50% = Absent
+            self.status = 'Absent'
     
     def __repr__(self):
         return f'<Attendance {self.user_id}: {self.date}>'
@@ -330,4 +351,46 @@ class Payrun(db.Model):
     
     def __repr__(self):
         return f'<Payrun {self.month}/{self.year}: {self.payslip_count} payslips>'
+
+class CompanySettings(db.Model):
+    __tablename__ = 'company_settings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    setting_key = db.Column(db.String(100), unique=True, nullable=False)
+    setting_value = db.Column(db.String(255), nullable=False)
+    description = db.Column(db.Text)
+    updated_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    updater = db.relationship('User', foreign_keys=[updated_by])
+    
+    def __repr__(self):
+        return f'<CompanySettings {self.setting_key}: {self.setting_value}>'
+    
+    @staticmethod
+    def get_setting(key, default=None):
+        """Get a setting value by key"""
+        setting = CompanySettings.query.filter_by(setting_key=key).first()
+        return setting.setting_value if setting else default
+    
+    @staticmethod
+    def set_setting(key, value, description=None, user_id=None):
+        """Set or update a setting value"""
+        setting = CompanySettings.query.filter_by(setting_key=key).first()
+        if setting:
+            setting.setting_value = str(value)
+            if description:
+                setting.description = description
+            if user_id:
+                setting.updated_by = user_id
+            setting.updated_at = datetime.utcnow()
+        else:
+            setting = CompanySettings(
+                setting_key=key,
+                setting_value=str(value),
+                description=description,
+                updated_by=user_id
+            )
+            db.session.add(setting)
+        return setting
 
