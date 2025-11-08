@@ -54,6 +54,66 @@ def create_app(config_class=Config):
     from app.routes.attendance import bp as attendance_bp
     app.register_blueprint(attendance_bp, url_prefix='/attendance')
     
+    # Register admin attendance route at /admin/attendance
+    from flask_login import login_required
+    
+    @app.route('/admin/attendance')
+    @login_required
+    def admin_attendance_route():
+        from flask import render_template, request
+        from flask_login import current_user
+        from app.models import Attendance, User
+        from datetime import datetime, date, timedelta
+        from sqlalchemy import or_
+        from app.utils.decorators import role_required
+        
+        # Check role
+        if current_user.role not in ['Admin', 'HR Officer', 'Payroll Officer']:
+            from flask import abort
+            abort(403)
+        
+        # Get date from query parameters, default to today
+        filter_date_str = request.args.get('date', '')
+        search = request.args.get('search', '').strip()
+        
+        if filter_date_str:
+            try:
+                filter_date = datetime.strptime(filter_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                filter_date = date.today()
+        else:
+            filter_date = date.today()
+        
+        # Build query - join with User to enable filtering and ordering
+        query = Attendance.query.join(User).filter(Attendance.date == filter_date)
+        
+        # Apply search filter
+        if search:
+            query = query.filter(
+                or_(
+                    User.name.ilike(f'%{search}%'),
+                    User.employee_id.ilike(f'%{search}%')
+                )
+            )
+        
+        # Get all employees for the date, ordered by user name
+        attendances = query.order_by(User.name).all()
+        
+        # Calculate previous and next dates
+        prev_date = filter_date - timedelta(days=1)
+        next_date = filter_date + timedelta(days=1)
+        
+        # Get all employees to show in dropdown
+        all_employees = User.query.filter_by(role='Employee').order_by(User.name).all()
+        
+        return render_template('attendance/admin_list.html',
+                             attendances=attendances,
+                             filter_date=filter_date,
+                             search=search,
+                             prev_date=prev_date,
+                             next_date=next_date,
+                             all_employees=all_employees)
+    
     from app.routes.leave import bp as leave_bp
     app.register_blueprint(leave_bp, url_prefix='/leave')
     

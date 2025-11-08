@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-check"></i> Attendance
+        </h1>
+        <p class="text-muted" style="margin: 0; font-size: 0.875rem;">
+            <i class="fas fa-info-circle"></i> View your monthly attendance records
+        </p>
+    </div>
+    
+    <!-- Month Navigation -->
+    <div class="search-filter-bar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <a href="{{ url_for('attendance.list', month=prev_month, year=prev_year) }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            
+            <form method="GET" action="{{ url_for('attendance.list') }}" style="display: flex; align-items: center; gap: 0.5rem;">
+                <select name="month" class="form-control" style="max-width: 150px;" onchange="this.form.submit()">
+                    {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if month == i %}selected{% endif %}>
+                        {{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][i] }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <select name="year" class="form-control" style="max-width: 100px;" onchange="this.form.submit()">
+                    {% for y in range(2020, 2031) %}
+                    <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            
+            <a href="{{ url_for('attendance.list', month=next_month, year=next_year) }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Summary Counters -->
+    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+        <div class="stat-card" style="background: #f0f9ff; padding: 1rem; border-radius: 8px; border: 1px solid #e0e7ff;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-calendar-check" style="color: #10b981; font-size: 1.5rem;"></i>
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Days Present</h3>
+            </div>
+            <p style="margin: 0; font-size: 2rem; font-weight: 700; color: #10b981;">{{ days_present }}</p>
+        </div>
+        
+        <div class="stat-card" style="background: #fef3c7; padding: 1rem; border-radius: 8px; border: 1px solid #fde68a;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-calendar-times" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Leave Count</h3>
+            </div>
+            <p style="margin: 0; font-size: 2rem; font-weight: 700; color: #f59e0b;">{{ leave_count }}</p>
+        </div>
+        
+        <div class="stat-card" style="background: #e0e7ff; padding: 1rem; border-radius: 8px; border: 1px solid #c7d2fe;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-business-time" style="color: #6366f1; font-size: 1.5rem;"></i>
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Total Working Days</h3>
+            </div>
+            <p style="margin: 0; font-size: 2rem; font-weight: 700; color: #6366f1;">{{ total_working_days }}</p>
+        </div>
+    </div>
+    
+    <!-- Attendance Table -->
+    <div class="table-container">
+        <table class="table" id="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Work Hours</th>
+                    <th>Extra Hours</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendances %}
+                <tr>
+                    <td>{{ attendance.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ attendance.check_in.strftime('%H:%M') if attendance.check_in else '-' }}</td>
+                    <td>{{ attendance.check_out.strftime('%H:%M') if attendance.check_out else '-' }}</td>
+                    <td>{{ "%.1f"|format(attendance.working_hours) }} hrs</td>
+                    <td>
+                        {% if attendance.extra_hours > 0 %}
+                            <span style="color: #10b981; font-weight: 600;">{{ "%.1f"|format(attendance.extra_hours) }} hrs</span>
+                        {% else %}
+                            <span style="color: #6b7280;">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">No attendance records found for {{ month_name }} {{ year }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

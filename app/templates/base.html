@@ -101,10 +101,17 @@
                 {% endif %}
                 
                 <li class="sidebar-item">
-                    <a href="{{ url_for('attendance.list') }}" class="sidebar-link {% if request.endpoint.startswith('attendance') %}active{% endif %}">
+                    {% if current_user.role == 'Employee' %}
+                    <a href="{{ url_for('attendance.list') }}" class="sidebar-link {% if request.endpoint == 'attendance.list' %}active{% endif %}">
                         <i class="fas fa-calendar-check"></i>
                         <span>Attendance</span>
                     </a>
+                    {% else %}
+                    <a href="{{ url_for('admin_attendance_route') }}" class="sidebar-link {% if request.endpoint == 'admin_attendance_route' %}active{% endif %}">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Attendance</span>
+                    </a>
+                    {% endif %}
                 </li>
                 
                 <li class="sidebar-item">
