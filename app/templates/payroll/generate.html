@@ -43,7 +43,7 @@
                 <option value="">Select Employee</option>
                 {% for employee in employees %}
                 {% set emp_settings = employee_settings_map.get(employee.id) %}
-                {% if not emp_settings or emp_settings.basic_salary == 0 %}
+                {% if not emp_settings or (emp_settings.wage == 0 and emp_settings.basic_salary == 0) %}
                 <option value="{{ employee.id }}" disabled title="Salary structure not set">
                     {{ employee.name }} ({{ employee.employee_id }}) - Salary structure required
                 </option>

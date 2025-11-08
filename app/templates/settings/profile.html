@@ -3,103 +3,97 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="mb-4">My Profile</h2>
-            
-            <!-- Profile Header -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-auto">
-                            {% if user.profile_picture %}
-                            <img src="{{ user.profile_picture }}" alt="{{ user.name }}" class="rounded-circle" width="80" height="80">
-                            {% else %}
-                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 32px;">
-                                {{ user.name[0].upper() }}
-                            </div>
-                            {% endif %}
-                        </div>
-                        <div class="col">
-                            <h4 class="mb-1">{{ user.name }}</h4>
-                            <p class="text-muted mb-1">{{ user.job_position or 'N/A' }}</p>
-                            <p class="mb-0">
-                                <i class="bi bi-envelope"></i> {{ user.email }} &nbsp;
-                                <i class="bi bi-telephone"></i> {{ user.contact_number or 'N/A' }}
-                            </p>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <strong>Company:</strong><br>
-                            {{ user.company or 'N/A' }}
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Department:</strong><br>
-                            {{ user.department or 'N/A' }}
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Manager:</strong><br>
-                            {% if manager %}
-                                {{ manager.name }}
-                            {% else %}
-                                <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> No Manager Assigned</span>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-3">
-                            <strong>Location:</strong><br>
-                            {{ user.location or 'N/A' }}
-                        </div>
-                    </div>
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-user"></i> My Profile
+        </h1>
+    </div>
+    
+    <!-- Profile Header -->
+    <div class="card-body">
+        <div class="row align-items-center mb-4">
+            <div class="col-auto">
+                {% if user.profile_picture %}
+                <img src="{{ user.profile_picture }}" alt="{{ user.name }}" class="rounded-circle" width="80" height="80">
+                {% else %}
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 32px;">
+                    {{ user.name[0].upper() }}
                 </div>
+                {% endif %}
             </div>
-            
-            <!-- Tabs -->
-            <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button" role="tab">
-                        Resume
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="private-info-tab" data-bs-toggle="tab" data-bs-target="#private-info" type="button" role="tab">
-                        Private Info
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="salary-info-tab" data-bs-toggle="tab" data-bs-target="#salary-info" type="button" role="tab">
-                        Salary Info
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
-                        Security
-                    </button>
-                </li>
-            </ul>
-            
-            <div class="tab-content" id="profileTabsContent">
-                <!-- Resume Tab -->
-                <div class="tab-pane fade show active" id="resume" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Resume / Work History</h5>
-                            <p class="text-muted">Your work history and resume information will be displayed here.</p>
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle"></i> This section is under development.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Private Info Tab -->
-                <div class="tab-pane fade" id="private-info" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Private Information</h5>
-                            <form method="POST" action="{{ url_for('settings.update_private_info') }}">
+            <div class="col">
+                <h4 class="mb-1">{{ user.name }}</h4>
+                <p class="text-muted mb-1">{{ user.job_position or 'Employee' }}</p>
+                <p class="mb-0">
+                    <i class="fas fa-envelope"></i> {{ user.email }} &nbsp;&nbsp;
+                    <i class="fas fa-phone"></i> {{ user.contact_number or 'N/A' }}
+                </p>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-3">
+                <strong>Company:</strong><br>
+                {{ user.company or 'N/A' }}
+            </div>
+            <div class="col-md-3">
+                <strong>Department:</strong><br>
+                {{ user.department or 'N/A' }}
+            </div>
+            <div class="col-md-3">
+                <strong>Manager:</strong><br>
+                {% if manager %}
+                    {{ manager.name }}
+                {% else %}
+                    <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> No Manager Assigned</span>
+                {% endif %}
+            </div>
+            <div class="col-md-3">
+                <strong>Location:</strong><br>
+                {{ user.location or 'N/A' }}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button" role="tab">
+                Resume
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="private-info-tab" data-bs-toggle="tab" data-bs-target="#private-info" type="button" role="tab">
+                Private Info
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="salary-info-tab" data-bs-toggle="tab" data-bs-target="#salary-info" type="button" role="tab">
+                Salary Info
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                Security
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content p-3" id="profileTabsContent">
+        <!-- Resume Tab -->
+        <div class="tab-pane fade show active" id="resume" role="tabpanel">
+            <h5>Resume / Work History</h5>
+            <p class="text-muted">Your work history and resume information will be displayed here.</p>
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> This section is under development.
+            </div>
+        </div>
+        
+        <!-- Private Info Tab -->
+        <div class="tab-pane fade" id="private-info" role="tabpanel">
+            <h5>Private Information</h5>
+            <form method="POST" action="{{ url_for('settings.update_private_info') }}" class="mt-3">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="date_of_birth" class="form-label">Date of Birth</label>
@@ -149,23 +143,19 @@
                                     <label for="address" class="form-label">Residing Address</label>
                                     <textarea class="form-control" id="address" name="address" rows="3">{{ user.address or '' }}</textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Update Private Info</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Salary Info Tab -->
-                <div class="tab-pane fade" id="salary-info" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Bank Details</h5>
-                            {% if user.has_missing_bank_info %}
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle"></i> Please complete your bank details. Missing information will be flagged in the Payroll Dashboard.
-                            </div>
-                            {% endif %}
-                            <form method="POST" action="{{ url_for('settings.update_salary_info') }}">
+                <button type="submit" class="btn btn-primary">Update Private Info</button>
+            </form>
+        </div>
+        
+        <!-- Salary Info Tab -->
+        <div class="tab-pane fade" id="salary-info" role="tabpanel">
+            <h5>Bank Details</h5>
+            {% if user.has_missing_bank_info %}
+            <div class="alert alert-warning mt-3">
+                <i class="fas fa-exclamation-triangle"></i> Please complete your bank details. Missing information will be flagged in the Payroll Dashboard.
+            </div>
+            {% endif %}
+            <form method="POST" action="{{ url_for('settings.update_salary_info') }}" class="mt-3">
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="bank_account_number" class="form-label">Account Number *</label>
@@ -202,25 +192,17 @@
                                                value="{{ user.employee_id }}" readonly>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary">Update Bank Details</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Security Tab -->
-                <div class="tab-pane fade" id="security" role="tabpanel">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Change Password</h5>
-                            <p class="text-muted">Update your password to keep your account secure.</p>
-                            <a href="{{ url_for('settings.change_password') }}" class="btn btn-primary">
-                                <i class="bi bi-key"></i> Change Password
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <button type="submit" class="btn btn-primary">Update Bank Details</button>
+            </form>
+        </div>
+        
+        <!-- Security Tab -->
+        <div class="tab-pane fade" id="security" role="tabpanel">
+            <h5>Change Password</h5>
+            <p class="text-muted">Update your password to keep your account secure.</p>
+            <a href="{{ url_for('settings.change_password') }}" class="btn btn-primary mt-2">
+                <i class="fas fa-key"></i> Change Password
+            </a>
         </div>
     </div>
 </div>

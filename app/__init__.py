@@ -131,7 +131,7 @@ def create_app(config_class=Config):
     def inject_attendance_status():
         from flask_login import current_user
         from datetime import date
-        from app.models import Attendance
+        from app.models import Attendance, AttendanceLog
         from sqlalchemy.exc import OperationalError, InternalError, ProgrammingError
         
         if current_user.is_authenticated:
@@ -142,8 +142,14 @@ def create_app(config_class=Config):
                     date=today
                 ).first()
                 
-                is_checked_in = today_attendance and today_attendance.check_in is not None
-                is_checked_out = today_attendance and today_attendance.check_out is not None
+                # Check last log to determine current status
+                is_checked_in = False
+                if today_attendance:
+                    last_log = today_attendance.check_logs.order_by(AttendanceLog.id.desc()).first()
+                    if last_log:
+                        is_checked_in = (last_log.log_type == 'check_in')
+                
+                is_checked_out = not is_checked_in and today_attendance is not None
                 check_in_time = today_attendance.check_in if today_attendance and today_attendance.check_in else None
                 
                 return {

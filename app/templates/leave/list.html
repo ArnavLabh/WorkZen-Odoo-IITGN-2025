@@ -4,94 +4,252 @@
 
 {% block content %}
 <div class="card">
-    <div class="card-header">
-        <h1 class="card-title">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h1 class="card-title mb-0">
             <i class="fas fa-calendar-times"></i> Time Off
         </h1>
+        {% if current_user.role == 'Employee' %}
+        <a href="{{ url_for('leave.apply') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New
+        </a>
+        {% endif %}
     </div>
     
-    <div class="search-filter-bar">
-        <form method="GET" action="{{ url_for('leave.list') }}" class="d-flex gap-2">
-            {% if current_user.role != 'Employee' %}
-            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
-            {% endif %}
-            <select name="status" class="form-control" style="max-width: 200px;">
-                <option value="">All Status</option>
-                <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
-                <option value="Approved" {% if status_filter == 'Approved' %}selected{% endif %}>Approved</option>
-                <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
-            </select>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-search"></i> Filter
+    <!-- Tabs for Leave Types -->
+    <ul class="nav nav-tabs px-3 pt-3" id="leaveTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="paid-tab" data-bs-toggle="tab" data-bs-target="#paid" type="button" role="tab">
+                Paid Time Off
             </button>
-            <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
-                <i class="fas fa-times"></i> Clear
-            </a>
-        </form>
-    </div>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="sick-tab" data-bs-toggle="tab" data-bs-target="#sick" type="button" role="tab">
+                Sick Leave Off
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="unpaid-tab" data-bs-toggle="tab" data-bs-target="#unpaid" type="button" role="tab">
+                Unpaid Leaves
+            </button>
+        </li>
+    </ul>
     
-    <div class="table-container">
-        <table class="table" id="data-table">
-            <thead>
-                <tr>
-                    {% if current_user.role != 'Employee' %}
-                    <th>Employee ID</th>
-                    <th>Name</th>
-                    {% endif %}
-                    <th>Leave Type</th>
-                    <th>Start Date</th>
-                    <th>End Date</th>
-                    <th>Status</th>
-                    {% if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer'] %}
-                    <th>Actions</th>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for leave in leaves %}
-                <tr>
-                    {% if current_user.role != 'Employee' %}
-                    <td>{{ leave.user.employee_id }}</td>
-                    <td>{{ leave.user.name }}</td>
-                    {% endif %}
-                    <td>{{ leave.leave_type }}</td>
-                    <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
-                    <td>
-                        {% if leave.status == 'Approved' %}
-                            <span class="badge badge-success">Approved</span>
-                        {% elif leave.status == 'Rejected' %}
-                            <span class="badge badge-danger">Rejected</span>
-                        {% else %}
-                            <span class="badge badge-warning">Pending</span>
+    <div class="tab-content p-3" id="leaveTabsContent">
+        <!-- Paid Time Off Tab -->
+        <div class="tab-pane fade show active" id="paid" role="tabpanel">
+            {% if current_user.role != 'Employee' %}
+            <div class="mb-3">
+                <form method="GET" action="{{ url_for('leave.list') }}" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control" placeholder="Search employee..." value="{{ search }}" style="max-width: 300px;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </form>
+            </div>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            {% if current_user.role != 'Employee' %}
+                            <th>Name</th>
+                            {% endif %}
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Time off Type</th>
+                            <th>Status</th>
+                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leaves %}
+                        {% if leave.leave_type in ['Paid Time Off', 'Annual Leave', 'Casual Leave'] %}
+                        <tr>
+                            {% if current_user.role != 'Employee' %}
+                            <td>{{ leave.user.name }}</td>
+                            {% endif %}
+                            <td>{{ leave.start_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ leave.end_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ leave.leave_type }}</td>
+                            <td>
+                                {% if leave.status == 'Approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif leave.status == 'Rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+                            <td>
+                                {% if leave.status == 'Pending' %}
+                                <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
                         {% endif %}
-                    </td>
-                    {% if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer'] %}
-                    <td>
-                        {% if leave.status == 'Pending' %}
-                        <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
-                            <button type="submit" class="btn btn-sm btn-success">
-                                <i class="fas fa-check"></i> Approve
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to reject this leave?')">
-                                <i class="fas fa-times"></i> Reject
-                            </button>
-                        </form>
-                        {% else %}
-                        <span class="badge badge-info">Processed</span>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Sick Leave Off Tab -->
+        <div class="tab-pane fade" id="sick" role="tabpanel">
+            {% if current_user.role != 'Employee' %}
+            <div class="mb-3">
+                <form method="GET" action="{{ url_for('leave.list') }}" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control" placeholder="Search employee..." value="{{ search }}" style="max-width: 300px;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </form>
+            </div>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            {% if current_user.role != 'Employee' %}
+                            <th>Name</th>
+                            {% endif %}
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Time off Type</th>
+                            <th>Status</th>
+                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leaves %}
+                        {% if leave.leave_type == 'Sick Leave' %}
+                        <tr>
+                            {% if current_user.role != 'Employee' %}
+                            <td>{{ leave.user.name }}</td>
+                            {% endif %}
+                            <td>{{ leave.start_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ leave.end_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ leave.leave_type }}</td>
+                            <td>
+                                {% if leave.status == 'Approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif leave.status == 'Rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+                            <td>
+                                {% if leave.status == 'Pending' %}
+                                <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
                         {% endif %}
-                    </td>
-                    {% endif %}
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="{% if current_user.role == 'Employee' %}4{% else %}7{% endif %}" class="text-center">No leave requests found</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Unpaid Leaves Tab -->
+        <div class="tab-pane fade" id="unpaid" role="tabpanel">
+            {% if current_user.role != 'Employee' %}
+            <div class="mb-3">
+                <form method="GET" action="{{ url_for('leave.list') }}" class="d-flex gap-2">
+                    <input type="text" name="search" class="form-control" placeholder="Search employee..." value="{{ search }}" style="max-width: 300px;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </form>
+            </div>
+            {% endif %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            {% if current_user.role != 'Employee' %}
+                            <th>Name</th>
+                            {% endif %}
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Time off Type</th>
+                            <th>Status</th>
+                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+                            <th>Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in leaves %}
+                        {% if leave.leave_type == 'Unpaid Leave' %}
+                        <tr>
+                            {% if current_user.role != 'Employee' %}
+                            <td>{{ leave.user.name }}</td>
+                            {% endif %}
+                            <td>{{ leave.start_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ leave.end_date.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ leave.leave_type }}</td>
+                            <td>
+                                {% if leave.status == 'Approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif leave.status == 'Rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+                            <td>
+                                {% if leave.status == 'Pending' %}
+                                <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            {% endif %}
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -16,16 +16,29 @@
     <form method="POST" action="{{ url_for('leave.apply') }}">
         <div class="form-group">
             <label class="form-label" for="leave_type">
-                <i class="fas fa-calendar-alt"></i> Leave Type *
+                <i class="fas fa-calendar-alt"></i> Time off Type *
             </label>
             <select class="form-control" id="leave_type" name="leave_type" required>
-                <option value="">Select Leave Type</option>
+                <option value="">Select Time off Type</option>
+                <option value="Paid Time Off">Paid Time Off</option>
                 <option value="Sick Leave">Sick Leave</option>
-                <option value="Casual Leave">Casual Leave</option>
-                <option value="Annual Leave">Annual Leave</option>
-                <option value="Personal Leave">Personal Leave</option>
-                <option value="Emergency Leave">Emergency Leave</option>
+                <option value="Unpaid Leave">Unpaid Leave</option>
             </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="validity_period">
+                <i class="fas fa-clock"></i> Validity Period
+            </label>
+            <div class="row">
+                <div class="col-6">
+                    <input type="date" class="form-control" id="validity_from" name="validity_from" placeholder="From">
+                </div>
+                <div class="col-6">
+                    <input type="date" class="form-control" id="validity_to" name="validity_to" placeholder="To">
+                </div>
+            </div>
+            <small class="form-text text-muted">Optional: Specify the validity period for this time off request</small>
         </div>
         
         <div class="row">
@@ -48,15 +61,30 @@
         </div>
         
         <div class="form-group">
-            <label class="form-label" for="reason">
-                <i class="fas fa-comment"></i> Reason
+            <label class="form-label" for="allocation">
+                <i class="fas fa-calendar-day"></i> Allocation (Days)
             </label>
-            <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="Enter reason for leave..."></textarea>
+            <input type="number" class="form-control" id="allocation" name="allocation" placeholder="20.00" step="0.5" min="0.5">
+            <small class="form-text text-muted">Number of days for this time off request</small>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="reason">
+                <i class="fas fa-comment"></i> Note
+            </label>
+            <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="Add any additional notes..."></textarea>
+        </div>
+        
+        <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="half_day" name="half_day">
+            <label class="form-check-label" for="half_day">
+                Half day leave (afternoon)
+            </label>
         </div>
         
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary">
-                <i class="fas fa-paper-plane"></i> Apply
+                <i class="fas fa-check"></i> Submit
             </button>
             <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Cancel
