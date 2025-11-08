@@ -128,11 +128,25 @@ def generate():
             flash('Error calculating salary', 'danger')
             return redirect(url_for('payroll.generate'))
         
+        # Get or create payrun for this month/year
+        from app.models import Payrun
+        payrun = Payrun.query.filter_by(month=int(month), year=int(year)).first()
+        if not payrun:
+            payrun = Payrun(
+                month=int(month),
+                year=int(year),
+                payslip_count=0,
+                created_by=current_user.id
+            )
+            db.session.add(payrun)
+            db.session.flush()
+        
         # Create payroll record
         payroll = Payroll(
             user_id=user_id,
             month=int(month),
             year=int(year),
+            payrun_id=payrun.id,
             basic_salary=salary_data['basic_salary'],
             hra=salary_data['hra'],
             conveyance=salary_data['conveyance'],
@@ -147,6 +161,10 @@ def generate():
         )
         
         db.session.add(payroll)
+        
+        # Update payrun count
+        payrun.payslip_count = Payroll.query.filter_by(payrun_id=payrun.id).count() + 1
+        
         db.session.commit()
         
         flash('Payroll generated successfully!', 'success')
@@ -183,6 +201,20 @@ def view(payroll_id):
         abort(403)
     
     return render_template('payroll/payslip.html', payroll=payroll)
+
+@bp.route('/<int:payroll_id>/mark-paid', methods=['POST'])
+@login_required
+@role_required(['Admin', 'Payroll Officer'])
+def mark_paid(payroll_id):
+    # Only Admin and Payroll Officer can mark as paid
+    payroll = Payroll.query.get_or_404(payroll_id)
+    
+    payroll.status = 'Paid'
+    payroll.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    flash('Payslip marked as paid successfully!', 'success')
+    return redirect(url_for('payroll.view', payroll_id=payroll.id))
 
 @bp.route('/<int:payroll_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -417,21 +449,28 @@ def salary_structure(user_id):
             try:
                 SalaryComponent.query.filter_by(payroll_settings_id=settings.id).delete()
             except Exception as e:
-                # Table doesn't exist - rollback and show error
-                db.session.rollback()
-                flash(f'Salary components table not found. Please run: python create_tables.py to create the table.', 'danger')
-                # Get default components for display
-                components = []
-                for comp_def in DEFAULT_COMPONENTS:
-                    components.append(type('Component', (), {
-                        'name': comp_def['name'],
-                        'computation_type': comp_def['computation_type'],
-                        'value': comp_def['value'],
-                        'base_for_percentage': comp_def['base_for_percentage'],
-                        'display_order': comp_def['display_order']
-                    })())
-                components = sorted(components, key=lambda x: x.display_order)
-                return render_template('payroll/salary_structure.html', user=user, settings=settings, components=components)
+                # Table doesn't exist - create it silently
+                from sqlalchemy import text
+                try:
+                    db.session.execute(text("""
+                        CREATE TABLE IF NOT EXISTS salary_components (
+                            id SERIAL PRIMARY KEY,
+                            payroll_settings_id INTEGER NOT NULL REFERENCES payroll_settings(id) ON DELETE CASCADE,
+                            name VARCHAR(100) NOT NULL,
+                            computation_type VARCHAR(20) NOT NULL,
+                            value NUMERIC(10, 4) NOT NULL,
+                            base_for_percentage VARCHAR(50) DEFAULT 'Wage',
+                            display_order INTEGER DEFAULT 0,
+                            is_active BOOLEAN DEFAULT TRUE,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(payroll_settings_id, name)
+                        )
+                    """))
+                    db.session.execute(text("CREATE INDEX IF NOT EXISTS idx_salary_components_payroll_settings_id ON salary_components(payroll_settings_id)"))
+                    db.session.commit()
+                except:
+                    db.session.rollback()
             
             for comp_data in components_data:
                 component = SalaryComponent(

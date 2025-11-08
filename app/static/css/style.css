@@ -690,3 +690,233 @@ select.form-control {
 .gap-2 { gap: 1rem; }
 .gap-3 { gap: 1.5rem; }
 
+
+
+/* Modern Animations and Transitions */
+.card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn {
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.nav-link {
+    transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    transform: translateY(-1px);
+}
+
+.nav-link.active {
+    border-bottom: 2px solid var(--primary-color) !important;
+}
+
+/* Smooth Scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card, .table-responsive, .form-group {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Minimalistic Spacing */
+.card {
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 1.25rem 1.5rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-control {
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.625rem 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.btn {
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Table Improvements */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table thead th {
+    border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1rem;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Badge Improvements */
+.badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 500;
+    font-size: 0.75rem;
+}
+
+/* Shadow Utilities */
+.shadow-sm {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Gradient Background */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Scroll Animation */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-in {
+    animation: slideInUp 0.4s ease;
+}
+
+/* Loading Animation */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Hover Effects for Links */
+a {
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+/* Tab Improvements */
+.nav-tabs {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    background-color: transparent;
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* Alert Improvements */
+.alert {
+    border-radius: 8px;
+    border: none;
+    padding: 1rem 1.25rem;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Input Group Improvements */
+.input-group {
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+/* Responsive Spacing */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .card-header {
+        padding: 1rem;
+    }
+    
+    .table thead th,
+    .table tbody td {
+        padding: 0.75rem;
+    }
+}

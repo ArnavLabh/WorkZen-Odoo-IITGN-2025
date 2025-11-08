@@ -8,11 +8,22 @@
         <h1 class="card-title">
             <i class="fas fa-file-invoice-dollar"></i> Payslip
         </h1>
-        <a href="{% if current_user.role == 'Employee' %}{{ url_for('payroll.my_payslips') }}{% else %}{{ url_for('payroll.list') }}{% endif %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
+        <div class="d-flex gap-2">
+            {% if current_user.role in ['Admin', 'Payroll Officer'] and payroll.status == 'Unpaid' %}
+            <form method="POST" action="{{ url_for('payroll.mark_paid', payroll_id=payroll.id) }}"
+                style="display: inline;">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-check"></i> Mark as Paid
+                </button>
+            </form>
+            {% endif %}
+            <a href="{% if current_user.role == 'Employee' %}{{ url_for('payroll.my_payslips') }}{% else %}{{ url_for('payroll.list') }}{% endif %}"
+                class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
     </div>
-    
+
     <div style="max-width: 800px; margin: 0 auto;">
         <div class="card mb-3">
             <h2>Employee Details</h2>
@@ -31,7 +42,8 @@
                 </tr>
                 <tr>
                     <th>Month</th>
-                    <td>{{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][payroll.month] }}</td>
+                    <td>{{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                        'October', 'November', 'December'][payroll.month] }}</td>
                 </tr>
                 <tr>
                     <th>Year</th>
@@ -39,7 +51,7 @@
                 </tr>
             </table>
         </div>
-        
+
         <div class="card mb-3">
             <h2>Earnings</h2>
             <table class="table">
@@ -65,7 +77,7 @@
                 </tr>
             </table>
         </div>
-        
+
         <div class="card mb-3">
             <h2>Deductions</h2>
             <table class="table">
@@ -87,22 +99,21 @@
                 </tr>
             </table>
         </div>
-        
+
         <div class="card" style="background-color: var(--primary-color); color: white;">
             <h2 style="color: white; margin: 0;">Net Pay</h2>
             <div style="font-size: 2rem; font-weight: bold; text-align: right;">
                 ₹{{ "%.2f"|format(payroll.net_salary) }}
             </div>
             <div style="text-align: right;">
-                Status: 
+                Status:
                 {% if payroll.status == 'Paid' %}
-                    <span class="badge badge-success">Paid</span>
+                <span class="badge badge-success">Paid</span>
                 {% else %}
-                    <span class="badge badge-warning">Unpaid</span>
+                <span class="badge badge-warning">Unpaid</span>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-

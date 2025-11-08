@@ -26,28 +26,13 @@
             </select>
         </div>
         
-        <div class="form-group">
-            <label class="form-label" for="validity_period">
-                <i class="fas fa-clock"></i> Validity Period
-            </label>
-            <div class="row">
-                <div class="col-6">
-                    <input type="date" class="form-control" id="validity_from" name="validity_from" placeholder="From">
-                </div>
-                <div class="col-6">
-                    <input type="date" class="form-control" id="validity_to" name="validity_to" placeholder="To">
-                </div>
-            </div>
-            <small class="form-text text-muted">Optional: Specify the validity period for this time off request</small>
-        </div>
-        
         <div class="row">
             <div class="col-6">
                 <div class="form-group">
                     <label class="form-label" for="start_date">
                         <i class="fas fa-calendar"></i> Start Date *
                     </label>
-                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    <input type="date" class="form-control" id="start_date" name="start_date" required onchange="calculateDays()">
                 </div>
             </div>
             <div class="col-6">
@@ -55,7 +40,7 @@
                     <label class="form-label" for="end_date">
                         <i class="fas fa-calendar"></i> End Date *
                     </label>
-                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                    <input type="date" class="form-control" id="end_date" name="end_date" required onchange="calculateDays()">
                 </div>
             </div>
         </div>
@@ -64,8 +49,8 @@
             <label class="form-label" for="allocation">
                 <i class="fas fa-calendar-day"></i> Allocation (Days)
             </label>
-            <input type="number" class="form-control" id="allocation" name="allocation" placeholder="20.00" step="0.5" min="0.5">
-            <small class="form-text text-muted">Number of days for this time off request</small>
+            <input type="number" class="form-control" id="allocation" name="allocation" placeholder="0" step="0.5" min="0.5" readonly>
+            <small class="form-text text-muted">Auto-calculated based on start and end date (editable)</small>
         </div>
         
         <div class="form-group">
@@ -92,5 +77,30 @@
         </div>
     </form>
 </div>
+
+<script>
+function calculateDays() {
+    const startDate = document.getElementById('start_date').value;
+    const endDate = document.getElementById('end_date').value;
+    const allocationInput = document.getElementById('allocation');
+    
+    if (startDate && endDate) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        if (end >= start) {
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both start and end date
+            allocationInput.value = diffDays;
+            allocationInput.readOnly = false; // Allow manual edit
+        }
+    }
+}
+
+// Allow manual editing of allocation
+document.getElementById('allocation').addEventListener('click', function() {
+    this.readOnly = false;
+});
+</script>
 {% endblock %}
 

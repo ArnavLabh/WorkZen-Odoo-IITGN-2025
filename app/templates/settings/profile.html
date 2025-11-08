@@ -3,84 +3,83 @@
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1 class="card-title">
-            <i class="fas fa-user"></i> My Profile
-        </h1>
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3">
+        <h4 class="mb-0">
+            <i class="fas fa-user text-primary"></i> My Profile
+        </h4>
     </div>
     
     <!-- Profile Header -->
-    <div class="card-body">
-        <div class="row align-items-center mb-4">
+    <div class="card-body border-bottom">
+        <div class="row align-items-center">
             <div class="col-auto">
                 {% if user.profile_picture %}
-                <img src="{{ user.profile_picture }}" alt="{{ user.name }}" class="rounded-circle" width="80" height="80">
+                <img src="{{ user.profile_picture }}" alt="{{ user.name }}" class="rounded-circle shadow-sm" width="80" height="80">
                 {% else %}
-                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 32px;">
+                <div class="rounded-circle bg-gradient-primary text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px; font-size: 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                     {{ user.name[0].upper() }}
                 </div>
                 {% endif %}
             </div>
             <div class="col">
-                <h4 class="mb-1">{{ user.name }}</h4>
-                <p class="text-muted mb-1">{{ user.job_position or 'Employee' }}</p>
-                <p class="mb-0">
-                    <i class="fas fa-envelope"></i> {{ user.email }} &nbsp;&nbsp;
-                    <i class="fas fa-phone"></i> {{ user.contact_number or 'N/A' }}
+                <h4 class="mb-1 fw-bold">{{ user.name }}</h4>
+                <p class="text-muted mb-2">{{ user.job_position or 'Employee' }}</p>
+                <p class="mb-0 small">
+                    <i class="fas fa-envelope text-primary"></i> {{ user.email }} &nbsp;&nbsp;
+                    <i class="fas fa-phone text-primary"></i> {{ user.contact_number or 'N/A' }}
                 </p>
             </div>
         </div>
-        <hr>
-        <div class="row">
-            <div class="col-md-3">
-                <strong>Company:</strong><br>
-                {{ user.company or 'N/A' }}
+        <div class="row mt-4">
+            <div class="col-md-3 mb-3">
+                <small class="text-muted d-block">Company</small>
+                <strong>{{ user.company or 'N/A' }}</strong>
             </div>
-            <div class="col-md-3">
-                <strong>Department:</strong><br>
-                {{ user.department or 'N/A' }}
+            <div class="col-md-3 mb-3">
+                <small class="text-muted d-block">Department</small>
+                <strong>{{ user.department or 'N/A' }}</strong>
             </div>
-            <div class="col-md-3">
-                <strong>Manager:</strong><br>
+            <div class="col-md-3 mb-3">
+                <small class="text-muted d-block">Manager</small>
                 {% if manager %}
-                    {{ manager.name }}
+                    <strong>{{ manager.name }}</strong>
                 {% else %}
-                    <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> No Manager Assigned</span>
+                    <span class="text-warning"><i class="fas fa-exclamation-triangle"></i> Not Assigned</span>
                 {% endif %}
             </div>
-            <div class="col-md-3">
-                <strong>Location:</strong><br>
-                {{ user.location or 'N/A' }}
+            <div class="col-md-3 mb-3">
+                <small class="text-muted d-block">Location</small>
+                <strong>{{ user.location or 'N/A' }}</strong>
             </div>
         </div>
     </div>
     
     <!-- Tabs -->
-    <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+    <ul class="nav nav-tabs border-0 px-4 pt-3" id="profileTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button" role="tab">
+            <button class="nav-link active border-0 px-4" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button" role="tab">
                 Resume
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="private-info-tab" data-bs-toggle="tab" data-bs-target="#private-info" type="button" role="tab">
+            <button class="nav-link border-0 px-4" id="private-info-tab" data-bs-toggle="tab" data-bs-target="#private-info" type="button" role="tab">
                 Private Info
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="salary-info-tab" data-bs-toggle="tab" data-bs-target="#salary-info" type="button" role="tab">
-                Salary Info
+            <button class="nav-link border-0 px-4" id="salary-info-tab" data-bs-toggle="tab" data-bs-target="#salary-info" type="button" role="tab">
+                Bank Details
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+            <button class="nav-link border-0 px-4" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
                 Security
             </button>
         </li>
     </ul>
     
-    <div class="tab-content p-3" id="profileTabsContent">
+    <div class="tab-content p-4" id="profileTabsContent">
         <!-- Resume Tab -->
         <div class="tab-pane fade show active" id="resume" role="tabpanel">
             <h5>Resume / Work History</h5>

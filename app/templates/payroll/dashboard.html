@@ -8,54 +8,18 @@
         <div class="col-12">
             <h2 class="mb-4">Payroll Dashboard</h2>
             
-            <!-- Warnings Section -->
+            <!-- Quick Actions -->
             <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card border-warning">
-                        <div class="card-body">
-                            <h5 class="card-title text-warning">
-                                <i class="bi bi-exclamation-triangle"></i> Warnings
-                            </h5>
-                            <div class="list-group list-group-flush">
-                                {% if employees_without_bank > 0 %}
-                                <a href="{{ url_for('employees.directory', filter='no_bank') }}" class="list-group-item list-group-item-action">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ employees_without_bank }} Employee(s) without Bank A/c</h6>
-                                        <i class="bi bi-chevron-right"></i>
-                                    </div>
-                                    <p class="mb-0 text-muted small">Click to view employees with missing bank details</p>
-                                </a>
-                                {% endif %}
-                                {% if employees_without_manager > 0 %}
-                                <a href="{{ url_for('employees.directory', filter='no_manager') }}" class="list-group-item list-group-item-action">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">{{ employees_without_manager }} Employee(s) without Manager</h6>
-                                        <i class="bi bi-chevron-right"></i>
-                                    </div>
-                                    <p class="mb-0 text-muted small">Click to view employees without assigned manager</p>
-                                </a>
-                                {% endif %}
-                                {% if employees_without_bank == 0 and employees_without_manager == 0 %}
-                                <div class="list-group-item">
-                                    <p class="mb-0 text-success"><i class="bi bi-check-circle"></i> No warnings at this time</p>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Quick Actions -->
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <div class="card">
                         <div class="card-body">
                             <h5 class="card-title">Quick Actions</h5>
-                            <div class="d-grid gap-2">
+                            <div class="d-flex gap-2">
                                 <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle"></i> Generate Payroll
+                                    <i class="fas fa-plus-circle"></i> Generate Payroll
                                 </a>
                                 <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-cash-stack"></i> Manage Salary Structures
+                                    <i class="fas fa-cash-register"></i> Manage Salary Structures
                                 </a>
                             </div>
                         </div>
