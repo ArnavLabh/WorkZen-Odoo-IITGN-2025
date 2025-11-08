@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Statement Report - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-file-invoice-dollar"></i> Salary Statement Report
+        </h1>
+        <a href="{{ url_for('reports.generate') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <form method="GET" action="{{ url_for('reports.salary_statement') }}" target="_blank">
+        <div class="row">
+            <div class="col-4">
+                <label for="employee_id" class="form-label">Employee Name</label>
+                <select name="employee_id" id="employee_id" class="form-control" required>
+                    <option value="">Select Employee</option>
+                    {% for employee in employees %}
+                    <option value="{{ employee.id }}">{{ employee.name }} ({{ employee.employee_id }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-4">
+                <label for="year" class="form-label">Year</label>
+                <select name="year" id="year" class="form-control" required>
+                    <option value="">Select Year</option>
+                    {% for year in years %}
+                    <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-4" style="display: flex; align-items: flex-end;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
