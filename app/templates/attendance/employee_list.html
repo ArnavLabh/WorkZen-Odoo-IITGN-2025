@@ -68,24 +68,36 @@
         </div>
     </div>
     
-    <!-- Attendance Table -->
+    <!-- Attendance Summary Table -->
     <div class="table-container">
+        <h5 style="margin: 1.5rem 0 1rem 0; font-weight: 600;">
+            <i class="fas fa-table"></i> Daily Summary
+        </h5>
         <table class="table" id="data-table">
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Check In</th>
-                    <th>Check Out</th>
+                    <th>Status</th>
                     <th>Work Hours</th>
                     <th>Extra Hours</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for attendance in attendances %}
                 <tr>
                     <td>{{ attendance.date.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ attendance.check_in.strftime('%H:%M') if attendance.check_in else '-' }}</td>
-                    <td>{{ attendance.check_out.strftime('%H:%M') if attendance.check_out else '-' }}</td>
+                    <td>
+                        {% if attendance.status == 'Present' %}
+                            <span class="badge bg-success">Present</span>
+                        {% elif attendance.status == 'Absent' %}
+                            <span class="badge bg-danger">Absent</span>
+                        {% elif attendance.status == 'Half Day' %}
+                            <span class="badge bg-warning">Half Day</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ attendance.status }}</span>
+                        {% endif %}
+                    </td>
                     <td>{{ "%.1f"|format(attendance.working_hours) }} hrs</td>
                     <td>
                         {% if attendance.extra_hours > 0 %}
@@ -93,6 +105,11 @@
                         {% else %}
                             <span style="color: #6b7280;">-</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewLogs({{ attendance.id }}, '{{ attendance.date.strftime('%Y-%m-%d') }}')">
+                            <i class="fas fa-list"></i> View Logs
+                        </button>
                     </td>
                 </tr>
                 {% else %}
@@ -103,6 +120,112 @@
             </tbody>
         </table>
     </div>
+    
+    <!-- Attendance Logs Table -->
+    <div class="table-container" style="margin-top: 2rem;">
+        <h5 style="margin: 1.5rem 0 1rem 0; font-weight: 600;">
+            <i class="fas fa-history"></i> Check-In/Check-Out Logs
+        </h5>
+        <div id="logs-container">
+            <p class="text-muted text-center" style="padding: 2rem;">
+                <i class="fas fa-info-circle"></i> Click "View Logs" on any date above to see detailed check-in/check-out times
+            </p>
+        </div>
+    </div>
 </div>
+
+<!-- Modal for viewing logs -->
+<div class="modal fade" id="logsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-history"></i> Attendance Logs - <span id="modal-date"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-logs-content">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewLogs(attendanceId, date) {
+    // Show logs in the logs container
+    document.getElementById('modal-date').textContent = date;
+    
+    // Fetch logs via AJAX
+    fetch(`/attendance/logs/${attendanceId}`)
+        .then(response => response.json())
+        .then(data => {
+            let html = '';
+            
+            if (data.logs && data.logs.length > 0) {
+                html = '<table class="table table-striped">';
+                html += '<thead><tr><th>#</th><th>Type</th><th>Time</th><th>Duration</th></tr></thead>';
+                html += '<tbody>';
+                
+                let checkInTime = null;
+                let sessionNum = 0;
+                
+                data.logs.forEach((log, index) => {
+                    if (log.log_type === 'check_in') {
+                        sessionNum++;
+                        checkInTime = log.timestamp;
+                        html += `<tr class="table-success">
+                            <td>${sessionNum}</td>
+                            <td><i class="fas fa-sign-in-alt text-success"></i> Check In</td>
+                            <td><strong>${log.timestamp}</strong></td>
+                            <td>-</td>
+                        </tr>`;
+                    } else if (log.log_type === 'check_out') {
+                        let duration = '-';
+                        if (checkInTime) {
+                            duration = log.duration || 'Calculating...';
+                        }
+                        html += `<tr class="table-warning">
+                            <td>${sessionNum}</td>
+                            <td><i class="fas fa-sign-out-alt text-warning"></i> Check Out</td>
+                            <td><strong>${log.timestamp}</strong></td>
+                            <td><span class="badge bg-primary">${duration}</span></td>
+                        </tr>`;
+                        checkInTime = null;
+                    }
+                });
+                
+                html += '</tbody></table>';
+                
+                // Add summary
+                html += `<div class="alert alert-info mt-3">
+                    <strong><i class="fas fa-clock"></i> Total Working Hours:</strong> ${data.total_hours} hours
+                </div>`;
+            } else {
+                html = '<p class="text-muted text-center">No logs found for this date.</p>';
+            }
+            
+            // Update both modal and main container
+            document.getElementById('modal-logs-content').innerHTML = html;
+            document.getElementById('logs-container').innerHTML = html;
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('logsModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error fetching logs:', error);
+            document.getElementById('modal-logs-content').innerHTML = 
+                '<p class="text-danger text-center">Error loading logs. Please try again.</p>';
+        });
+}
+</script>
+
 {% endblock %}
 

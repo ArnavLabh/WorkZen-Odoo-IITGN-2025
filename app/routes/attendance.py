@@ -265,3 +265,104 @@ def checkout():
 
 # Manual attendance editing and deletion have been removed - attendance is controlled exclusively by employees through Check-In/Check-Out
 
+
+
+@bp.route('/logs/<int:attendance_id>')
+@login_required
+@role_required(['Employee'])
+def get_logs(attendance_id):
+    """
+    Get all check-in/check-out logs for a specific attendance record
+    Returns JSON with logs and calculated durations
+    """
+    from app.models import AttendanceLog
+    
+    # Get attendance record and verify it belongs to current user
+    attendance = Attendance.query.get_or_404(attendance_id)
+    
+    if attendance.user_id != current_user.id:
+        abort(403)
+    
+    # Get all logs for this attendance
+    logs = AttendanceLog.query.filter_by(
+        attendance_id=attendance_id
+    ).order_by(AttendanceLog.id).all()
+    
+    # Format logs with duration calculation
+    logs_data = []
+    check_in_time = None
+    
+    for log in logs:
+        log_dict = {
+            'log_type': log.log_type,
+            'timestamp': log.timestamp.strftime('%I:%M %p')
+        }
+        
+        if log.log_type == 'check_in':
+            check_in_time = log.timestamp
+            log_dict['duration'] = None
+        elif log.log_type == 'check_out' and check_in_time:
+            # Calculate duration
+            check_in_dt = datetime.combine(attendance.date, check_in_time)
+            check_out_dt = datetime.combine(attendance.date, log.timestamp)
+            duration_seconds = (check_out_dt - check_in_dt).total_seconds()
+            hours = int(duration_seconds // 3600)
+            minutes = int((duration_seconds % 3600) // 60)
+            log_dict['duration'] = f"{hours}h {minutes}m"
+            check_in_time = None
+        
+        logs_data.append(log_dict)
+    
+    return jsonify({
+        'logs': logs_data,
+        'total_hours': f"{attendance.working_hours:.1f}"
+    })
+
+@bp.route('/status')
+@login_required
+@role_required(['Employee'])
+def get_status():
+    """
+    Get current check-in/check-out status for today
+    Returns JSON indicating whether user should see check-in or check-out button
+    """
+    from app.models import AttendanceLog
+    
+    today = date.today()
+    
+    # Get today's attendance
+    attendance = Attendance.query.filter_by(
+        user_id=current_user.id,
+        date=today
+    ).first()
+    
+    if not attendance:
+        # No attendance record - show check-in button
+        return jsonify({
+            'status': 'not_checked_in',
+            'show_button': 'checkin',
+            'message': 'Start your day'
+        })
+    
+    # Get last log
+    last_log = AttendanceLog.query.filter_by(
+        attendance_id=attendance.id
+    ).order_by(AttendanceLog.id.desc()).first()
+    
+    if not last_log or last_log.log_type == 'check_out':
+        # Last action was check-out or no logs - show check-in button
+        return jsonify({
+            'status': 'checked_out',
+            'show_button': 'checkin',
+            'message': 'Check in again',
+            'working_hours': f"{attendance.working_hours:.1f}"
+        })
+    else:
+        # Last action was check-in - show check-out button
+        check_in_time = last_log.timestamp.strftime('%I:%M %p')
+        return jsonify({
+            'status': 'checked_in',
+            'show_button': 'checkout',
+            'message': f'Checked in at {check_in_time}',
+            'check_in_time': check_in_time
+        })
