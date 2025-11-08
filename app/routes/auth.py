@@ -1,8 +1,11 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
-from app.models import User
+from app.models import User, PayrollSettings
 from app.utils.validators import validate_email, validate_password, validate_employee_id
+from config import Config
+import requests
+from datetime import datetime
 
 bp = Blueprint('auth', __name__)
 
@@ -100,6 +103,127 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.clear()
     flash('You have been logged out successfully', 'info')
     return redirect(url_for('auth.login'))
+
+@bp.route('/google')
+def google_login():
+    """Initiate Google OAuth login"""
+    from flask import current_app
+    
+    # Get Google OAuth configuration
+    client_id = current_app.config.get('GOOGLE_CLIENT_ID')
+    redirect_uri = request.url_root.rstrip('/') + url_for('auth.google_callback')
+    
+    # Build Google OAuth URL
+    google_auth_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?"
+        f"client_id={client_id}&"
+        f"redirect_uri={redirect_uri}&"
+        f"response_type=code&"
+        f"scope=openid email profile&"
+        f"access_type=offline&"
+        f"prompt=consent"
+    )
+    
+    return redirect(google_auth_url)
+
+@bp.route('/google/callback')
+def google_callback():
+    """Handle Google OAuth callback"""
+    from flask import current_app
+    import requests
+    
+    code = request.args.get('code')
+    if not code:
+        flash('Google authentication failed', 'danger')
+        return redirect(url_for('auth.login'))
+    
+    try:
+        client_id = current_app.config.get('GOOGLE_CLIENT_ID')
+        client_secret = current_app.config.get('GOOGLE_CLIENT_SECRET')
+        redirect_uri = request.url_root.rstrip('/') + url_for('auth.google_callback')
+        
+        # Exchange code for token
+        token_url = "https://oauth2.googleapis.com/token"
+        token_data = {
+            'code': code,
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'redirect_uri': redirect_uri,
+            'grant_type': 'authorization_code'
+        }
+        
+        token_response = requests.post(token_url, data=token_data)
+        token_json = token_response.json()
+        
+        if 'error' in token_json:
+            flash('Google authentication failed', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        access_token = token_json.get('access_token')
+        
+        # Get user info from Google
+        user_info_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+        headers = {'Authorization': f'Bearer {access_token}'}
+        user_info_response = requests.get(user_info_url, headers=headers)
+        user_info = user_info_response.json()
+        
+        if 'error' in user_info:
+            flash('Failed to get user information from Google', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        email = user_info.get('email')
+        name = user_info.get('name', '')
+        google_id = user_info.get('id')
+        
+        if not email:
+            flash('Unable to get email from Google account', 'danger')
+            return redirect(url_for('auth.login'))
+        
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            # Create new user with Google sign-in
+            # Default role is Employee for Google sign-ups
+            employee_id = f"EMP{User.query.count() + 1:04d}"
+            while User.query.filter_by(employee_id=employee_id).first():
+                employee_id = f"EMP{User.query.count() + 1:04d}"
+            
+            user = User(
+                employee_id=employee_id,
+                name=name or email.split('@')[0],
+                email=email,
+                role='Employee',
+                date_of_joining=datetime.utcnow().date(),
+                password_hash='google_oauth'  # Special marker for OAuth users
+            )
+            db.session.add(user)
+            db.session.flush()
+            
+            # Create payroll settings
+            payroll_settings = PayrollSettings(
+                user_id=user.id,
+                basic_salary=0.0,
+                hra_percentage=0.0,
+                conveyance=0.0,
+                other_allowances=0.0,
+                pf_percentage=12.0,
+                professional_tax_amount=200.0
+            )
+            db.session.add(payroll_settings)
+            db.session.commit()
+            
+            flash('Account created successfully with Google!', 'success')
+        
+        # Log in the user
+        login_user(user)
+        flash(f'Welcome, {user.name}!', 'success')
+        return redirect(url_for('dashboard.dashboard'))
+        
+    except Exception as e:
+        flash(f'Google authentication error: {str(e)}', 'danger')
+        return redirect(url_for('auth.login'))
 
