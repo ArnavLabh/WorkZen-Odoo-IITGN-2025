@@ -12,6 +12,26 @@
     
     <div class="card-body">
         <form method="POST" action="{{ url_for('settings.company_settings') }}">
+            <h5 class="mb-4">Company Information</h5>
+            
+            <div class="form-group">
+                <label class="form-label" for="company_name">
+                    <i class="fas fa-building"></i> Company Name
+                </label>
+                <input type="text" 
+                       class="form-control" 
+                       id="company_name" 
+                       name="company_name" 
+                       value="{{ company_name }}" 
+                       required
+                       placeholder="Enter company name">
+                <small class="form-text text-muted">
+                    This name will be displayed throughout the application and assigned to all employees.
+                </small>
+            </div>
+            
+            <hr class="my-4">
+            
             <h5 class="mb-3">Attendance Settings</h5>
             
             <div class="form-group">
@@ -35,13 +55,13 @@
                 </small>
             </div>
             
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> 
-                <strong>Example:</strong> If set to 8 hours:
-                <ul class="mb-0 mt-2">
-                    <li>8+ hours worked = Full Day (Present)</li>
-                    <li>4-6 hours worked = Half Day</li>
-                    <li>Less than 4 hours = Absent</li>
+            <div class="alert alert-info mb-4">
+                <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>How It Works</h6>
+                <p class="mb-2">The system automatically calculates attendance status based on total working hours:</p>
+                <ul class="mb-0">
+                    <li><strong>Full Day (Present):</strong> ≥75% of required hours (e.g., 6+ hours for 8-hour day)</li>
+                    <li><strong>Half Day:</strong> 50-75% of required hours (e.g., 4-6 hours for 8-hour day)</li>
+                    <li><strong>Absent:</strong> &lt;50% of required hours (e.g., &lt;4 hours for 8-hour day)</li>
                 </ul>
             </div>
             

@@ -136,27 +136,46 @@ def company_settings():
         abort(403)
     
     if request.method == 'POST':
+        company_name = request.form.get('company_name', '').strip()
         required_hours = request.form.get('required_working_hours', '8')
+        
+        errors = []
+        
+        if not company_name:
+            errors.append('Company name is required')
         
         try:
             hours = float(required_hours)
             if hours <= 0 or hours > 24:
-                flash('Working hours must be between 0 and 24', 'danger')
-            else:
-                CompanySettings.set_setting(
-                    'required_working_hours',
-                    hours,
-                    'Required working hours per day for full attendance',
-                    current_user.id
-                )
-                db.session.commit()
-                flash('Company settings updated successfully!', 'success')
-                return redirect(url_for('settings.company_settings'))
+                errors.append('Working hours must be between 0 and 24')
         except ValueError:
-            flash('Invalid working hours value', 'danger')
+            errors.append('Invalid working hours value')
+        
+        if errors:
+            for error in errors:
+                flash(error, 'danger')
+        else:
+            CompanySettings.set_setting(
+                'company_name',
+                company_name,
+                'Company name displayed across the application',
+                current_user.id
+            )
+            CompanySettings.set_setting(
+                'required_working_hours',
+                hours,
+                'Required working hours per day for full attendance',
+                current_user.id
+            )
+            db.session.commit()
+            flash('Company settings updated successfully!', 'success')
+            return redirect(url_for('settings.company_settings'))
     
     # Get current settings
+    company_name = CompanySettings.get_setting('company_name', 'WorkZen')
     required_hours = CompanySettings.get_setting('required_working_hours', '8')
     
-    return render_template('settings/company.html', required_hours=required_hours)
+    return render_template('settings/company.html', 
+                         company_name=company_name,
+                         required_hours=required_hours)
 

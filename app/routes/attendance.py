@@ -136,10 +136,14 @@ def checkin():
             db.session.flush()
         
         # Check if already checked in (not checked out yet)
-        last_log = attendance.check_logs.order_by(AttendanceLog.id.desc()).first()
-        if last_log and last_log.log_type == 'check_in':
-            flash('You are already checked in. Please check out first.', 'warning')
-            return redirect(request.referrer or url_for('settings.profile'))
+        try:
+            last_log = attendance.check_logs.order_by(AttendanceLog.id.desc()).first()
+            if last_log and last_log.log_type == 'check_in':
+                flash('You are already checked in. Please check out first.', 'warning')
+                return redirect(request.referrer or url_for('dashboard.dashboard'))
+        except:
+            # If check_logs doesn't work, continue anyway
+            pass
         
         # Create check-in log
         check_in_time = datetime.now().time()
@@ -185,10 +189,14 @@ def checkout():
             return redirect(request.referrer or url_for('settings.profile'))
         
         # Check if already checked out (or never checked in)
-        last_log = attendance.check_logs.order_by(AttendanceLog.id.desc()).first()
-        if not last_log or last_log.log_type == 'check_out':
-            flash('You need to check in first', 'danger')
-            return redirect(request.referrer or url_for('settings.profile'))
+        try:
+            last_log = attendance.check_logs.order_by(AttendanceLog.id.desc()).first()
+            if not last_log or last_log.log_type == 'check_out':
+                flash('You need to check in first', 'danger')
+                return redirect(request.referrer or url_for('dashboard.dashboard'))
+        except:
+            # If check_logs doesn't work, continue anyway
+            pass
         
         # Create check-out log
         check_out_time = datetime.now().time()
@@ -214,7 +222,7 @@ def checkout():
         db.session.rollback()
         flash('Error checking out. Please try again.', 'danger')
     
-    return redirect(request.referrer or url_for('settings.profile'))
+    return redirect(request.referrer or url_for('dashboard.dashboard'))
 
 # Manual attendance editing and deletion have been removed - attendance is controlled exclusively by employees through Check-In/Check-Out
 

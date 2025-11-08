@@ -51,6 +51,18 @@
                 </a>
             </div>
         </div>
+        
+        <div class="col-4">
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-file-contract"></i> Salary Statement
+                </h3>
+                <p>Generate annual salary statements</p>
+                <a href="{{ url_for('reports.salary_statement') }}" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> View Report
+                </a>
+            </div>
+        </div>
         {% endif %}
         
         {% if current_user.role == 'Employee' %}

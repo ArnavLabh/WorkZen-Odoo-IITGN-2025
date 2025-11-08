@@ -55,8 +55,20 @@ def get_attendance_days(user_id, month, year):
     
     return present_days, half_days
 
+def count_weekdays(start_date, end_date):
+    """Count weekdays (Mon-Fri) between two dates, excluding weekends"""
+    weekdays = 0
+    current = start_date
+    while current <= end_date:
+        if current.weekday() < 5:  # Monday=0, Friday=4
+            weekdays += 1
+        current += timedelta(days=1)
+    return weekdays
+
 def get_approved_leaves(user_id, month, year):
-    """Get number of approved leave days for a user in a given month/year"""
+    """Get number of approved leave days for a user in a given month/year
+    Returns: (paid_leave_days, unpaid_leave_days)
+    """
     start_date = date(year, month, 1)
     if month == 12:
         end_date = date(year + 1, 1, 1) - timedelta(days=1)
@@ -70,15 +82,26 @@ def get_approved_leaves(user_id, month, year):
         Leave.end_date >= start_date
     ).all()
     
-    total_days = 0
+    paid_leave_days = 0
+    unpaid_leave_days = 0
+    
     for leave in leaves:
-        # Calculate overlapping days
+        # Calculate overlapping days (excluding weekends)
         leave_start = max(leave.start_date, start_date)
         leave_end = min(leave.end_date, end_date)
+        
         if leave_start <= leave_end:
-            total_days += (leave_end - leave_start).days + 1
+            # Count only weekdays
+            days = count_weekdays(leave_start, leave_end)
+            
+            # Categorize as paid or unpaid
+            if leave.leave_type == 'Unpaid Leave':
+                unpaid_leave_days += days
+            else:
+                # Paid Time Off, Sick Leave, etc. are paid
+                paid_leave_days += days
     
-    return total_days
+    return paid_leave_days, unpaid_leave_days
 
 def calculate_monthly_salary(user_id, month, year, settings):
     """Calculate monthly salary based on attendance and leaves"""
@@ -87,17 +110,23 @@ def calculate_monthly_salary(user_id, month, year, settings):
     
     # Get attendance and leave data
     present_days, half_days = get_attendance_days(user_id, month, year)
-    leave_days = get_approved_leaves(user_id, month, year)
+    paid_leave_days, unpaid_leave_days = get_approved_leaves(user_id, month, year)
     
-    # Calculate working days in month
+    # Calculate working days in month (excluding weekends)
     start_date = date(year, month, 1)
     if month == 12:
         end_date = date(year + 1, 1, 1) - timedelta(days=1)
     else:
         end_date = date(year, month + 1, 1) - timedelta(days=1)
     
-    total_days = (end_date - start_date).days + 1
-    working_days = total_days - leave_days
+    # Count total weekdays in month
+    total_weekdays = count_weekdays(start_date, end_date)
+    
+    # Calculate actual working days (present + half days + paid leaves)
+    actual_working_days = present_days + (half_days * 0.5) + paid_leave_days
+    
+    # Calculate absent days (total weekdays - present - half - all leaves)
+    absent_days = total_weekdays - present_days - half_days - paid_leave_days - unpaid_leave_days
     
     # Determine wage amount (use new wage field if available, otherwise fall back to legacy basic_salary)
     if settings.wage and float(settings.wage) > 0:
@@ -191,25 +220,36 @@ def calculate_monthly_salary(user_id, month, year, settings):
         gross_salary = calculate_gross_salary(basic_salary, hra_percentage, conveyance, other_allowances)
         hra = basic_salary * hra_percentage / Decimal('100')
     
-    # For now, we calculate full month salary
-    # In a more advanced system, you might prorate based on working days
+    # Prorate salary based on actual working days
+    # Formula: (actual_working_days / total_weekdays) * monthly_salary
+    if total_weekdays > 0:
+        prorate_factor = Decimal(str(actual_working_days)) / Decimal(str(total_weekdays))
+    else:
+        prorate_factor = Decimal('1.0')
     
-    # Calculate deductions
-    pf_contribution = calculate_pf(basic_salary, settings.pf_percentage)
+    # Apply proration to all salary components
+    prorated_basic = basic_salary * prorate_factor
+    prorated_hra = hra * prorate_factor
+    prorated_conveyance = conveyance * prorate_factor
+    prorated_other_allowances = other_allowances * prorate_factor
+    prorated_gross = gross_salary * prorate_factor
+    
+    # Calculate deductions (on prorated salary)
+    pf_contribution = calculate_pf(prorated_basic, settings.pf_percentage)
     professional_tax = calculate_professional_tax(settings.professional_tax_amount)
     other_deductions = Decimal('0.0')
     
     # Calculate net salary
     net_salary, total_deductions = calculate_net_salary(
-        gross_salary, pf_contribution, professional_tax, other_deductions
+        prorated_gross, pf_contribution, professional_tax, other_deductions
     )
     
     return {
-        'basic_salary': float(basic_salary),
-        'hra': float(hra),
-        'conveyance': float(conveyance),
-        'other_allowances': float(other_allowances),
-        'gross_salary': float(gross_salary),
+        'basic_salary': float(prorated_basic),
+        'hra': float(prorated_hra),
+        'conveyance': float(prorated_conveyance),
+        'other_allowances': float(prorated_other_allowances),
+        'gross_salary': float(prorated_gross),
         'pf_contribution': float(pf_contribution),
         'professional_tax': float(professional_tax),
         'other_deductions': float(other_deductions),
@@ -217,8 +257,10 @@ def calculate_monthly_salary(user_id, month, year, settings):
         'net_salary': float(net_salary),
         'present_days': present_days,
         'half_days': half_days,
-        'leave_days': leave_days,
-        'working_days': working_days,
-        'total_days': total_days
+        'paid_leave_days': paid_leave_days,
+        'unpaid_leave_days': unpaid_leave_days,
+        'absent_days': int(absent_days),
+        'actual_working_days': float(actual_working_days),
+        'total_weekdays': total_weekdays
     }
 

@@ -1,21 +1,233 @@
-{% extends "base.html" %}
-
-{% block title %}Login - WorkZen{% endblock %}
-
-{% block content %}
-<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="card" style="max-width: 400px; width: 100%; margin: 2rem;">
-        <div class="card-header" style="border: none; text-align: center; padding-bottom: 0;">
-            <h1 style="color: var(--primary-color); margin-bottom: 0.5rem;">
-                <i class="fas fa-briefcase"></i> WorkZen
-            </h1>
-            <p style="color: var(--text-secondary);">Sign in to your account</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - WorkZen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 100%;
+            padding: 3rem;
+            animation: slideUp 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .logo-container img {
+            height: 60px;
+            margin-bottom: 1rem;
+        }
+        
+        .logo-container h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .logo-container p {
+            color: #64748b;
+            font-size: 0.9375rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-size: 0.9375rem;
+        }
+        
+        .form-label i {
+            color: #0891b2;
+            margin-right: 0.5rem;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #0891b2;
+            box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(8, 145, 178, 0.4);
+        }
+        
+        .btn-google {
+            background: white;
+            color: #1e293b;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .btn-google:hover {
+            background: #f8fafc;
+            border-color: #0891b2;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        
+        .divider span {
+            padding: 0 1rem;
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        
+        .register-link {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .register-link p {
+            color: #64748b;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #0891b2;
+        }
+        
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9375rem;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="WorkZen">
+            <h1>Welcome Back</h1>
+            <p>Sign in to your account</p>
         </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
         
         <form method="POST" action="{{ url_for('auth.login') }}">
             <div class="form-group">
                 <label class="form-label" for="email">
-                    <i class="fas fa-user"></i> Login Id/Email
+                    <i class="fas fa-user"></i> Login ID / Email
                 </label>
                 <input type="text" class="form-control" id="email" name="email" required autofocus placeholder="Enter your Login ID or Email">
             </div>
@@ -24,53 +236,36 @@
                 <label class="form-label" for="password">
                     <i class="fas fa-lock"></i> Password
                 </label>
-                <input type="password" class="form-control" id="password" name="password" required>
+                <input type="password" class="form-control" id="password" name="password" required placeholder="Enter your password">
             </div>
             
-            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                <i class="fas fa-sign-in-alt"></i> Login
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt"></i> Sign In
             </button>
         </form>
         
-        <div style="text-align: center; margin: 1.5rem 0;">
-            <div style="display: flex; align-items: center; margin: 1rem 0;">
-                <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
-                <span style="padding: 0 1rem; color: var(--text-secondary);">OR</span>
-                <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
-            </div>
-            
-            <a href="{{ url_for('auth.google_login') }}" class="btn" style="width: 100%; background: white; color: #4285f4; border: 1px solid #dadce0; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg">
-                    <g fill="#000" fill-rule="evenodd">
-                        <path d="M9 3.48c1.69 0 2.83.73 3.48 1.34l2.54-2.48C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l2.91 2.26C4.6 5.05 6.62 3.48 9 3.48z" fill="#EA4335"/>
-                        <path d="M17.64 9.2c0-.74-.06-1.28-.19-1.84H9v3.34h4.96c-.21 1.18-.84 2.18-1.79 2.91l2.84 2.2c2.01-1.85 3.17-4.57 3.17-7.61z" fill="#4285F4"/>
-                        <path d="M3.88 10.78A5.54 5.54 0 0 1 3.58 9c0-.62.11-1.22.29-1.78L.96 4.96A9.008 9.008 0 0 0 0 9c0 1.45.35 2.82.96 4.04l2.92-2.26z" fill="#FBBC05"/>
-                        <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.84-2.2c-.76.53-1.78.9-3.12.9-2.38 0-4.4-1.57-5.12-3.74L.96 13.04C2.45 15.98 5.48 18 9 18z" fill="#34A853"/>
-                        <path fill="none" d="M0 0h18v18H0z"/>
-                    </g>
-                </svg>
-                Sign in with Google
-            </a>
+        <div class="divider">
+            <span>OR</span>
         </div>
         
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
-                Don't have an account?
-            </p>
-            <a href="{{ url_for('auth.register') }}" class="btn btn-secondary" style="width: 100%;">
-                <i class="fas fa-user-plus"></i> Register as Admin/HR Officer
+        <a href="{{ url_for('auth.google_login') }}" class="btn btn-google">
+            <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                <g fill="none" fill-rule="evenodd">
+                    <path d="M9 3.48c1.69 0 2.83.73 3.48 1.34l2.54-2.48C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l2.91 2.26C4.6 5.05 6.62 3.48 9 3.48z" fill="#EA4335"/>
+                    <path d="M17.64 9.2c0-.74-.06-1.28-.19-1.84H9v3.34h4.96c-.21 1.18-.84 2.18-1.79 2.91l2.84 2.2c2.01-1.85 3.17-4.57 3.17-7.61z" fill="#4285F4"/>
+                    <path d="M3.88 10.78A5.54 5.54 0 0 1 3.58 9c0-.62.11-1.22.29-1.78L.96 4.96A9.008 9.008 0 0 0 0 9c0 1.45.35 2.82.96 4.04l2.92-2.26z" fill="#FBBC05"/>
+                    <path d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.84-2.2c-.76.53-1.78.9-3.12.9-2.38 0-4.4-1.57-5.12-3.74L.96 13.04C2.45 15.98 5.48 18 9 18z" fill="#34A853"/>
+                </g>
+            </svg>
+            Sign in with Google
+        </a>
+        
+        <div class="register-link">
+            <p>Don't have an account?</p>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-secondary">
+                <i class="fas fa-user-plus"></i> Create Account
             </a>
         </div>
     </div>
-</div>
-
-<style>
-.auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-</style>
-{% endblock %}
-
+</body>
+</html>

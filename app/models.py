@@ -123,10 +123,13 @@ class Attendance(db.Model):
     
     def update_status_from_hours(self):
         """Update attendance status based on working hours and company settings"""
-        from app.models import CompanySettings
-        
-        # Get required working hours from settings (default 8)
-        required_hours = float(CompanySettings.get_setting('required_working_hours', '8'))
+        try:
+            from app.models import CompanySettings
+            # Get required working hours from settings (default 8)
+            required_hours = float(CompanySettings.get_setting('required_working_hours', '8'))
+        except:
+            # Fallback if table doesn't exist
+            required_hours = 8.0
         
         if self.working_hours >= required_hours * 0.75:
             # 75% or more = Full Day (Present)

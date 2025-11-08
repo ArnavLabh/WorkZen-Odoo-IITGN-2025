@@ -3,254 +3,660 @@
 {% block title %}Time Off - WorkZen{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h4 class="mb-0">
-            <i class="fas fa-calendar-times text-primary"></i> Time Off
-        </h4>
+<div class="timeoff-container">
+    <!-- Header -->
+    <div class="timeoff-header">
+        <div>
+            <h1 class="page-title">Time Off Management</h1>
+            <p class="page-subtitle">Manage your time off requests and view status</p>
+        </div>
         {% if current_user.role == 'Employee' %}
-        <a href="{{ url_for('leave.apply') }}" class="btn btn-primary btn-sm">
+        <a href="{{ url_for('leave.apply') }}" class="btn-primary-custom">
             <i class="fas fa-plus"></i> New Request
         </a>
         {% endif %}
     </div>
     
-    <!-- Tabs for Leave Types -->
-    <ul class="nav nav-tabs border-0 px-4 pt-2" id="leaveTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active border-0 px-4" id="paid-tab" data-bs-toggle="tab" data-bs-target="#paid" type="button" role="tab">
-                Paid Time Off
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link border-0 px-4" id="sick-tab" data-bs-toggle="tab" data-bs-target="#sick" type="button" role="tab">
-                Sick Leave
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link border-0 px-4" id="unpaid-tab" data-bs-toggle="tab" data-bs-target="#unpaid" type="button" role="tab">
-                Unpaid Leaves
-            </button>
-        </li>
-    </ul>
-    
-    <div class="tab-content p-4" id="leaveTabsContent">
-        <!-- Paid Time Off Tab -->
-        <div class="tab-pane fade show active" id="paid" role="tabpanel">
-            {% if current_user.role != 'Employee' %}
-            <div class="mb-3">
-                <form method="GET" action="{{ url_for('leave.list') }}" class="d-flex gap-2">
-                    <input type="text" name="search" class="form-control" placeholder="Search employee..." value="{{ search }}" style="max-width: 300px;">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                    <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                </form>
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern" style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);">
+                <i class="fas fa-calendar-check"></i>
             </div>
-            {% endif %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            {% if current_user.role != 'Employee' %}
-                            <th>Name</th>
-                            {% endif %}
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Time off Type</th>
-                            <th>Status</th>
-                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
-                            <th>Actions</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leave in leaves %}
-                        {% if leave.leave_type in ['Paid Time Off', 'Annual Leave', 'Casual Leave'] %}
-                        <tr>
-                            {% if current_user.role != 'Employee' %}
-                            <td>{{ leave.user.name }}</td>
-                            {% endif %}
-                            <td>{{ leave.start_date.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ leave.end_date.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ leave.leave_type }}</td>
-                            <td>
-                                {% if leave.status == 'Approved' %}
-                                    <span class="badge bg-success">Approved</span>
-                                {% elif leave.status == 'Rejected' %}
-                                    <span class="badge bg-danger">Rejected</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Pending</span>
-                                {% endif %}
-                            </td>
-                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
-                            <td>
-                                {% if leave.status == 'Pending' %}
-                                <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                </form>
-                                <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="stat-content-modern">
+                <span class="stat-value-modern">{{ leaves|selectattr('leave_type', 'equalto', 'Paid Time Off')|list|length }}</span>
+                <span class="stat-label-modern">Paid Time Off</span>
             </div>
         </div>
-        
-        <!-- Sick Leave Off Tab -->
-        <div class="tab-pane fade" id="sick" role="tabpanel">
-            {% if current_user.role != 'Employee' %}
-            <div class="mb-3">
-                <form method="GET" action="{{ url_for('leave.list') }}" class="d-flex gap-2">
-                    <input type="text" name="search" class="form-control" placeholder="Search employee..." value="{{ search }}" style="max-width: 300px;">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                    <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                </form>
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                <i class="fas fa-heartbeat"></i>
             </div>
-            {% endif %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            {% if current_user.role != 'Employee' %}
-                            <th>Name</th>
-                            {% endif %}
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Time off Type</th>
-                            <th>Status</th>
-                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
-                            <th>Actions</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leave in leaves %}
-                        {% if leave.leave_type == 'Sick Leave' %}
-                        <tr>
-                            {% if current_user.role != 'Employee' %}
-                            <td>{{ leave.user.name }}</td>
-                            {% endif %}
-                            <td>{{ leave.start_date.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ leave.end_date.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ leave.leave_type }}</td>
-                            <td>
-                                {% if leave.status == 'Approved' %}
-                                    <span class="badge bg-success">Approved</span>
-                                {% elif leave.status == 'Rejected' %}
-                                    <span class="badge bg-danger">Rejected</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Pending</span>
-                                {% endif %}
-                            </td>
-                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
-                            <td>
-                                {% if leave.status == 'Pending' %}
-                                <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                </form>
-                                <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="stat-content-modern">
+                <span class="stat-value-modern">{{ leaves|selectattr('leave_type', 'equalto', 'Sick Leave')|list|length }}</span>
+                <span class="stat-label-modern">Sick Leave</span>
             </div>
         </div>
-        
-        <!-- Unpaid Leaves Tab -->
-        <div class="tab-pane fade" id="unpaid" role="tabpanel">
-            {% if current_user.role != 'Employee' %}
-            <div class="mb-3">
-                <form method="GET" action="{{ url_for('leave.list') }}" class="d-flex gap-2">
-                    <input type="text" name="search" class="form-control" placeholder="Search employee..." value="{{ search }}" style="max-width: 300px;">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-search"></i> Search
-                    </button>
-                    <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
-                        <i class="fas fa-times"></i> Clear
-                    </a>
-                </form>
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <i class="fas fa-calendar-times"></i>
             </div>
-            {% endif %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            {% if current_user.role != 'Employee' %}
-                            <th>Name</th>
-                            {% endif %}
-                            <th>Start Date</th>
-                            <th>End Date</th>
-                            <th>Time off Type</th>
-                            <th>Status</th>
-                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
-                            <th>Actions</th>
-                            {% endif %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for leave in leaves %}
-                        {% if leave.leave_type == 'Unpaid Leave' %}
-                        <tr>
-                            {% if current_user.role != 'Employee' %}
-                            <td>{{ leave.user.name }}</td>
-                            {% endif %}
-                            <td>{{ leave.start_date.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ leave.end_date.strftime('%d/%m/%Y') }}</td>
-                            <td>{{ leave.leave_type }}</td>
-                            <td>
-                                {% if leave.status == 'Approved' %}
-                                    <span class="badge bg-success">Approved</span>
-                                {% elif leave.status == 'Rejected' %}
-                                    <span class="badge bg-danger">Rejected</span>
-                                {% else %}
-                                    <span class="badge bg-warning">Pending</span>
-                                {% endif %}
-                            </td>
-                            {% if current_user.role in ['Admin', 'Payroll Officer'] %}
-                            <td>
-                                {% if leave.status == 'Pending' %}
-                                <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                </form>
-                                <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            {% endif %}
-                        </tr>
-                        {% endif %}
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="stat-content-modern">
+                <span class="stat-value-modern">{{ leaves|selectattr('leave_type', 'equalto', 'Unpaid Leave')|list|length }}</span>
+                <span class="stat-label-modern">Unpaid Leave</span>
+            </div>
+        </div>
+        <div class="stat-card-modern">
+            <div class="stat-icon-modern" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content-modern">
+                <span class="stat-value-modern">{{ leaves|selectattr('status', 'equalto', 'Pending')|list|length }}</span>
+                <span class="stat-label-modern">Pending Approval</span>
             </div>
         </div>
     </div>
+    
+    <!-- Tabs -->
+    <div class="timeoff-tabs">
+        <button class="tab-btn-modern active" data-tab="all">
+            <i class="fas fa-list"></i> All Requests
+        </button>
+        <button class="tab-btn-modern" data-tab="paid">
+            <i class="fas fa-calendar-check"></i> Paid Time Off
+        </button>
+        <button class="tab-btn-modern" data-tab="sick">
+            <i class="fas fa-heartbeat"></i> Sick Leave
+        </button>
+        <button class="tab-btn-modern" data-tab="unpaid">
+            <i class="fas fa-calendar-times"></i> Unpaid Leave
+        </button>
+    </div>
+    
+    <!-- Search Bar -->
+    {% if current_user.role != 'Employee' %}
+    <div class="search-bar-modern">
+        <form method="GET" action="{{ url_for('leave.list') }}" class="search-form-modern">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" name="search" class="search-input-modern" placeholder="Search by employee name..." value="{{ search }}">
+            <button type="submit" class="btn-search-modern">Search</button>
+            {% if search %}
+            <a href="{{ url_for('leave.list') }}" class="btn-clear-modern">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    {% endif %}
+    
+    <!-- Leave Requests Grid -->
+    <div class="tab-content-modern active" id="all">
+        <div class="leaves-grid">
+            {% for leave in leaves %}
+            <div class="leave-card">
+                <div class="leave-card-header">
+                    <div class="leave-type-badge" style="background: {% if leave.leave_type == 'Paid Time Off' %}#0891b2{% elif leave.leave_type == 'Sick Leave' %}#10b981{% else %}#f59e0b{% endif %};">
+                        {{ leave.leave_type }}
+                    </div>
+                    <div class="leave-status-badge status-{{ leave.status|lower }}">
+                        {{ leave.status }}
+                    </div>
+                </div>
+                
+                {% if current_user.role != 'Employee' %}
+                <div class="leave-employee">
+                    <div class="employee-avatar-small">{{ leave.user.name[0].upper() }}</div>
+                    <span class="employee-name-small">{{ leave.user.name }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="leave-dates">
+                    <div class="date-item">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>{{ leave.start_date.strftime('%d %b %Y') }}</span>
+                    </div>
+                    <i class="fas fa-arrow-right date-arrow"></i>
+                    <div class="date-item">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>{{ leave.end_date.strftime('%d %b %Y') }}</span>
+                    </div>
+                </div>
+                
+                <div class="leave-duration">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ (leave.end_date - leave.start_date).days + 1 }} day(s)</span>
+                </div>
+                
+                {% if leave.reason %}
+                <div class="leave-reason">
+                    <strong>Reason:</strong> {{ leave.reason[:100] }}{% if leave.reason|length > 100 %}...{% endif %}
+                </div>
+                {% endif %}
+                
+                {% if current_user.role in ['Admin', 'Payroll Officer'] and leave.status == 'Pending' %}
+                <div class="leave-actions">
+                    <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-approve">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-reject">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <p>No time off requests found</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Paid Time Off Tab -->
+    <div class="tab-content-modern" id="paid">
+        <div class="leaves-grid">
+            {% for leave in leaves %}
+            {% if leave.leave_type in ['Paid Time Off', 'Annual Leave', 'Casual Leave'] %}
+            <div class="leave-card">
+                <!-- Same card content as above -->
+                <div class="leave-card-header">
+                    <div class="leave-type-badge" style="background: #0891b2;">{{ leave.leave_type }}</div>
+                    <div class="leave-status-badge status-{{ leave.status|lower }}">{{ leave.status }}</div>
+                </div>
+                {% if current_user.role != 'Employee' %}
+                <div class="leave-employee">
+                    <div class="employee-avatar-small">{{ leave.user.name[0].upper() }}</div>
+                    <span class="employee-name-small">{{ leave.user.name }}</span>
+                </div>
+                {% endif %}
+                <div class="leave-dates">
+                    <div class="date-item"><i class="fas fa-calendar-day"></i><span>{{ leave.start_date.strftime('%d %b %Y') }}</span></div>
+                    <i class="fas fa-arrow-right date-arrow"></i>
+                    <div class="date-item"><i class="fas fa-calendar-day"></i><span>{{ leave.end_date.strftime('%d %b %Y') }}</span></div>
+                </div>
+                <div class="leave-duration"><i class="fas fa-clock"></i><span>{{ (leave.end_date - leave.start_date).days + 1 }} day(s)</span></div>
+                {% if current_user.role in ['Admin', 'Payroll Officer'] and leave.status == 'Pending' %}
+                <div class="leave-actions">
+                    <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-approve"><i class="fas fa-check"></i> Approve</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Reject</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Similar for Sick and Unpaid tabs -->
+    <div class="tab-content-modern" id="sick">
+        <div class="leaves-grid">
+            {% for leave in leaves %}
+            {% if leave.leave_type == 'Sick Leave' %}
+            <div class="leave-card">
+                <div class="leave-card-header">
+                    <div class="leave-type-badge" style="background: #10b981;">{{ leave.leave_type }}</div>
+                    <div class="leave-status-badge status-{{ leave.status|lower }}">{{ leave.status }}</div>
+                </div>
+                {% if current_user.role != 'Employee' %}
+                <div class="leave-employee">
+                    <div class="employee-avatar-small">{{ leave.user.name[0].upper() }}</div>
+                    <span class="employee-name-small">{{ leave.user.name }}</span>
+                </div>
+                {% endif %}
+                <div class="leave-dates">
+                    <div class="date-item"><i class="fas fa-calendar-day"></i><span>{{ leave.start_date.strftime('%d %b %Y') }}</span></div>
+                    <i class="fas fa-arrow-right date-arrow"></i>
+                    <div class="date-item"><i class="fas fa-calendar-day"></i><span>{{ leave.end_date.strftime('%d %b %Y') }}</span></div>
+                </div>
+                <div class="leave-duration"><i class="fas fa-clock"></i><span>{{ (leave.end_date - leave.start_date).days + 1 }} day(s)</span></div>
+                {% if current_user.role in ['Admin', 'Payroll Officer'] and leave.status == 'Pending' %}
+                <div class="leave-actions">
+                    <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-approve"><i class="fas fa-check"></i> Approve</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Reject</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="tab-content-modern" id="unpaid">
+        <div class="leaves-grid">
+            {% for leave in leaves %}
+            {% if leave.leave_type == 'Unpaid Leave' %}
+            <div class="leave-card">
+                <div class="leave-card-header">
+                    <div class="leave-type-badge" style="background: #f59e0b;">{{ leave.leave_type }}</div>
+                    <div class="leave-status-badge status-{{ leave.status|lower }}">{{ leave.status }}</div>
+                </div>
+                {% if current_user.role != 'Employee' %}
+                <div class="leave-employee">
+                    <div class="employee-avatar-small">{{ leave.user.name[0].upper() }}</div>
+                    <span class="employee-name-small">{{ leave.user.name }}</span>
+                </div>
+                {% endif %}
+                <div class="leave-dates">
+                    <div class="date-item"><i class="fas fa-calendar-day"></i><span>{{ leave.start_date.strftime('%d %b %Y') }}</span></div>
+                    <i class="fas fa-arrow-right date-arrow"></i>
+                    <div class="date-item"><i class="fas fa-calendar-day"></i><span>{{ leave.end_date.strftime('%d %b %Y') }}</span></div>
+                </div>
+                <div class="leave-duration"><i class="fas fa-clock"></i><span>{{ (leave.end_date - leave.start_date).days + 1 }} day(s)</span></div>
+                {% if current_user.role in ['Admin', 'Payroll Officer'] and leave.status == 'Pending' %}
+                <div class="leave-actions">
+                    <form method="POST" action="{{ url_for('leave.approve', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-approve"><i class="fas fa-check"></i> Approve</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('leave.reject', leave_id=leave.id) }}" style="display: inline;">
+                        <button type="submit" class="btn-reject"><i class="fas fa-times"></i> Reject</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
 </div>
-{% endblock %}
 
+<style>
+.timeoff-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.timeoff-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.5rem 0;
+}
+
+.page-subtitle {
+    color: #64748b;
+    margin: 0;
+}
+
+.btn-primary-custom {
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+    color: white;
+    padding: 0.875rem 1.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-primary-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(8, 145, 178, 0.4);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card-modern {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.stat-card-modern:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.stat-icon-modern {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-content-modern {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value-modern {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.stat-label-modern {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.timeoff-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.tab-btn-modern {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.tab-btn-modern:hover {
+    background: #f8fafc;
+    color: #0891b2;
+}
+
+.tab-btn-modern.active {
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+}
+
+.search-bar-modern {
+    margin-bottom: 2rem;
+}
+
+.search-form-modern {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: white;
+    padding: 1rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.search-icon {
+    color: #64748b;
+    font-size: 1.125rem;
+}
+
+.search-input-modern {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    color: #1e293b;
+}
+
+.btn-search-modern, .btn-clear-modern {
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    border: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-search-modern {
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+    color: white;
+}
+
+.btn-clear-modern {
+    background: #f1f5f9;
+    color: #64748b;
+    text-decoration: none;
+}
+
+.tab-content-modern {
+    display: none;
+}
+
+.tab-content-modern.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+.leaves-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.leave-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.leave-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.leave-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.leave-type-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.leave-status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.leave-employee {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.employee-avatar-small {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
+
+.employee-name-small {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.leave-dates {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.date-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.9375rem;
+}
+
+.date-arrow {
+    color: #cbd5e1;
+}
+
+.leave-duration {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #0891b2;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.leave-reason {
+    color: #64748b;
+    font-size: 0.9375rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.leave-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-approve, .btn-reject {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-approve {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-reject {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.btn-approve:hover, .btn-reject:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #94a3b8;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .leaves-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeoff-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+</style>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn-modern').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const tabName = btn.dataset.tab;
+        
+        document.querySelectorAll('.tab-btn-modern').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content-modern').forEach(c => c.classList.remove('active'));
+        
+        btn.classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+    });
+});
+</script>
+{% endblock %}
