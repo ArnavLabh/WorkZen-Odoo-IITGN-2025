@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, flash, redirect, url_for,
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models import User, PayrollSettings
-from app.utils.validators import validate_email, validate_password, validate_employee_id
+from app.utils.validators import validate_email, validate_password
 from config import Config
 import requests
 from datetime import datetime
