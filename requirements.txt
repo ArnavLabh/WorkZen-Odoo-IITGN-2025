@@ -2,15 +2,10 @@ Flask==3.0.0
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-Migrate==4.0.5
-Flask-Babel==4.0.0
+Flask-Babel==3.1.0
 Babel==2.14.0
 SQLAlchemy==2.0.23
 psycopg2-binary==2.9.9
 python-dotenv==1.0.0
 Werkzeug==3.0.1
-requests==2.31.0
-google-auth==2.23.4
-google-auth-oauthlib==1.1.0
-google-auth-httplib2==0.1.1
-gunicorn==21.2.0
 
