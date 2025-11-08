@@ -62,7 +62,7 @@ def directory():
     
     if search:
         query = query.filter(
-            db.or_(
+            or_(
                 User.name.ilike(f'%{search}%'),
                 User.employee_id.ilike(f'%{search}%'),
                 User.email.ilike(f'%{search}%')
@@ -74,16 +74,10 @@ def directory():
     # Get today's date
     today = date.today()
     
-    # Get employee statuses
+    # Get employee statuses based on live attendance data
     employee_statuses = {}
     for employee in employees:
-        # Check today's attendance
-        today_attendance = Attendance.query.filter_by(
-            user_id=employee.id,
-            date=today
-        ).first()
-        
-        # Check if on leave today
+        # Check if on leave today (leave takes priority)
         today_leave = Leave.query.filter(
             Leave.user_id == employee.id,
             Leave.start_date <= today,
@@ -91,13 +85,20 @@ def directory():
             Leave.status == 'Approved'
         ).first()
         
-        # Determine status
         if today_leave:
             employee_statuses[employee.id] = 'on_leave'  # Airplane icon
-        elif today_attendance and today_attendance.status == 'Present':
-            employee_statuses[employee.id] = 'present'  # Green dot
         else:
-            employee_statuses[employee.id] = 'absent'  # Yellow dot
+            # Check today's attendance - use live check-in status
+            today_attendance = Attendance.query.filter_by(
+                user_id=employee.id,
+                date=today
+            ).first()
+            
+            # Employee is present if they have checked in today (even if not checked out yet)
+            if today_attendance and today_attendance.check_in:
+                employee_statuses[employee.id] = 'present'  # Green dot
+            else:
+                employee_statuses[employee.id] = 'absent'  # Yellow dot
     
     return render_template('employees/directory.html', 
                          employees=employees, 

@@ -30,9 +30,16 @@
             </a>
         </div>
         <div class="header-right">
-            <!-- Check In/Check Out Button -->
+            <!-- Attendance Status Indicator and Check-In/Check-Out -->
             {% if current_user.role == 'Employee' %}
             <div style="display: flex; align-items: center; gap: 1rem; margin-right: 1rem;">
+                <!-- Circular Attendance Status Indicator (Non-clickable) -->
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--bg-primary); {% if is_checked_in and not is_checked_out %}background-color: #10b981;{% else %}background-color: #ef4444;{% endif %};" 
+                         title="{% if is_checked_in and not is_checked_out %}Checked In{% else %}Not Checked In{% endif %}"></div>
+                </div>
+                
+                <!-- Check-In/Check-Out Buttons -->
                 {% if not is_checked_in %}
                     <form method="POST" action="{{ url_for('attendance.checkin') }}" style="margin: 0;">
                         <button type="submit" class="btn btn-success btn-sm">
@@ -63,14 +70,6 @@
                 <button id="profile-btn" class="profile-btn">
                     <div class="avatar" style="position: relative;">
                         {{ current_user.name[0].upper() }}
-                        <!-- Status Dot -->
-                        {% if current_user.role == 'Employee' %}
-                            {% if is_checked_in and not is_checked_out %}
-                                <div style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background-color: #10b981; border: 2px solid var(--bg-primary); border-radius: 50%;" title="Checked In"></div>
-                            {% else %}
-                                <div style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background-color: #ef4444; border: 2px solid var(--bg-primary); border-radius: 50%;" title="Not Checked In"></div>
-                            {% endif %}
-                        {% endif %}
                     </div>
                     <span>{{ current_user.name }}</span>
                     <i class="fas fa-chevron-down"></i>

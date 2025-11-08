@@ -55,94 +55,17 @@ def list():
                          user_filter=user_filter,
                          users=users)
 
-@bp.route('/mark', methods=['GET', 'POST'])
-@login_required
-@employee_or_above_required
-def mark():
-    if request.method == 'POST':
-        user_id = request.form.get('user_id', current_user.id)
-        attendance_date = request.form.get('date', '')
-        check_in_time = request.form.get('check_in', '')
-        check_out_time = request.form.get('check_out', '')
-        status = request.form.get('status', 'Present')
-        
-        # Validation
-        errors = []
-        
-        if not attendance_date:
-            errors.append('Date is required')
-        
-        # Only Admin/HR can mark for other users
-        if int(user_id) != current_user.id and current_user.role not in ['Admin', 'HR Officer']:
-            errors.append('You can only mark your own attendance')
-        
-        if errors:
-            for error in errors:
-                flash(error, 'danger')
-            return redirect(url_for('attendance.mark'))
-        
-        try:
-            date_obj = datetime.strptime(attendance_date, '%Y-%m-%d').date()
-            check_in = datetime.strptime(check_in_time, '%H:%M').time() if check_in_time else None
-            check_out = datetime.strptime(check_out_time, '%H:%M').time() if check_out_time else None
-        except ValueError:
-            flash('Invalid date or time format', 'danger')
-            return redirect(url_for('attendance.mark'))
-        
-        # Check if attendance already exists
-        existing = Attendance.query.filter_by(user_id=user_id, date=date_obj).first()
-        
-        if existing:
-            # Update existing
-            existing.check_in = check_in
-            existing.check_out = check_out
-            existing.status = status
-            existing.calculate_working_hours()
-            existing.updated_at = datetime.utcnow()
-            flash('Attendance updated successfully!', 'success')
-        else:
-            # Create new
-            attendance = Attendance(
-                user_id=user_id,
-                date=date_obj,
-                check_in=check_in,
-                check_out=check_out,
-                status=status
-            )
-            attendance.calculate_working_hours()
-            db.session.add(attendance)
-            flash('Attendance marked successfully!', 'success')
-        
-        db.session.commit()
-        return redirect(url_for('attendance.list'))
-    
-    # GET request - show form
-    user_id = request.args.get('user_id', current_user.id)
-    attendance_date = request.args.get('date', date.today().strftime('%Y-%m-%d'))
-    
-    # Get existing attendance if any
-    try:
-        date_obj = datetime.strptime(attendance_date, '%Y-%m-%d').date()
-        existing = Attendance.query.filter_by(user_id=user_id, date=date_obj).first()
-    except ValueError:
-        existing = None
-    
-    # Get users for dropdown (Admin/HR can mark, Payroll can view)
-    users = []
-    if current_user.role in ['Admin', 'HR Officer']:
-        users = User.query.filter_by(role='Employee').order_by(User.name).all()
-    
-    return render_template('attendance/mark.html', 
-                         user_id=user_id,
-                         attendance_date=attendance_date,
-                         existing=existing,
-                         users=users)
+# Manual attendance marking has been removed - attendance is controlled exclusively by employees through Check-In/Check-Out
 
 @bp.route('/checkin', methods=['POST'])
 @login_required
-@employee_or_above_required
 def checkin():
-    """Check in for today"""
+    """Check in for today - Employee only"""
+    # Only employees can check in
+    if current_user.role != 'Employee':
+        flash('Only employees can check in', 'danger')
+        return redirect(request.referrer or url_for('employees.directory'))
+    
     today = date.today()
     user_id = current_user.id
     
@@ -151,19 +74,23 @@ def checkin():
     
     if existing and existing.check_in:
         flash('You have already checked in today', 'warning')
-        # Redirect based on role
-        if current_user.role == 'Employee':
-            return redirect(request.referrer or url_for('settings.profile'))
-        else:
-            return redirect(request.referrer or url_for('employees.directory'))
+        return redirect(request.referrer or url_for('settings.profile'))
+    
+    # Check if already checked out today (prevent checking in again after checkout)
+    if existing and existing.check_out:
+        flash('You have already checked out today', 'warning')
+        return redirect(request.referrer or url_for('settings.profile'))
     
     check_in_time = datetime.now().time()
     
+    # Create new attendance entry on check-in
     if existing:
+        # If record exists but no check-in, update it
         existing.check_in = check_in_time
         existing.status = 'Present'  # Always set to Present when checking in
         existing.calculate_working_hours()
     else:
+        # Create new attendance record
         attendance = Attendance(
             user_id=user_id,
             date=today,
@@ -175,17 +102,17 @@ def checkin():
     
     db.session.commit()
     flash('Checked in successfully!', 'success')
-    # Redirect based on role
-    if current_user.role == 'Employee':
-        return redirect(request.referrer or url_for('settings.profile'))
-    else:
-        return redirect(request.referrer or url_for('employees.directory'))
+    return redirect(request.referrer or url_for('settings.profile'))
 
 @bp.route('/checkout', methods=['POST'])
 @login_required
-@employee_or_above_required
 def checkout():
-    """Check out for today"""
+    """Check out for today - Employee only"""
+    # Only employees can check out
+    if current_user.role != 'Employee':
+        flash('Only employees can check out', 'danger')
+        return redirect(request.referrer or url_for('employees.directory'))
+    
     today = date.today()
     user_id = current_user.id
     
@@ -193,71 +120,23 @@ def checkout():
     
     if not attendance:
         flash('Please check in first', 'danger')
-        # Redirect based on role
-        if current_user.role == 'Employee':
-            return redirect(request.referrer or url_for('settings.profile'))
-        else:
-            return redirect(request.referrer or url_for('employees.directory'))
+        return redirect(request.referrer or url_for('settings.profile'))
+    
+    if not attendance.check_in:
+        flash('Please check in first', 'danger')
+        return redirect(request.referrer or url_for('settings.profile'))
     
     if attendance.check_out:
         flash('You have already checked out today', 'warning')
-        # Redirect based on role
-        if current_user.role == 'Employee':
-            return redirect(request.referrer or url_for('settings.profile'))
-        else:
-            return redirect(request.referrer or url_for('employees.directory'))
+        return redirect(request.referrer or url_for('settings.profile'))
     
+    # Close attendance entry on check-out
     attendance.check_out = datetime.now().time()
     attendance.calculate_working_hours()
     db.session.commit()
     
     flash('Checked out successfully!', 'success')
-    # Redirect based on role
-    if current_user.role == 'Employee':
-        return redirect(request.referrer or url_for('settings.profile'))
-    else:
-        return redirect(request.referrer or url_for('employees.directory'))
+    return redirect(request.referrer or url_for('settings.profile'))
 
-@bp.route('/<int:attendance_id>/edit', methods=['GET', 'POST'])
-@login_required
-@hr_required
-def edit(attendance_id):
-    attendance = Attendance.query.get_or_404(attendance_id)
-    
-    if request.method == 'POST':
-        attendance_date = request.form.get('date', '')
-        check_in_time = request.form.get('check_in', '')
-        check_out_time = request.form.get('check_out', '')
-        status = request.form.get('status', 'Present')
-        
-        try:
-            date_obj = datetime.strptime(attendance_date, '%Y-%m-%d').date()
-            check_in = datetime.strptime(check_in_time, '%H:%M').time() if check_in_time else None
-            check_out = datetime.strptime(check_out_time, '%H:%M').time() if check_out_time else None
-        except ValueError:
-            flash('Invalid date or time format', 'danger')
-            return redirect(url_for('attendance.edit', attendance_id=attendance_id))
-        
-        attendance.date = date_obj
-        attendance.check_in = check_in
-        attendance.check_out = check_out
-        attendance.status = status
-        attendance.calculate_working_hours()
-        attendance.updated_at = datetime.utcnow()
-        
-        db.session.commit()
-        flash('Attendance updated successfully!', 'success')
-        return redirect(url_for('attendance.list'))
-    
-    return render_template('attendance/edit.html', attendance=attendance)
-
-@bp.route('/<int:attendance_id>/delete', methods=['POST'])
-@login_required
-@hr_required
-def delete(attendance_id):
-    attendance = Attendance.query.get_or_404(attendance_id)
-    db.session.delete(attendance)
-    db.session.commit()
-    flash('Attendance deleted successfully!', 'success')
-    return redirect(url_for('attendance.list'))
+# Manual attendance editing and deletion have been removed - attendance is controlled exclusively by employees through Check-In/Check-Out
 

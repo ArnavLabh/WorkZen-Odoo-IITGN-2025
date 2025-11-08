@@ -8,16 +8,14 @@
         <h1 class="card-title">
             <i class="fas fa-calendar-check"></i> Attendance
         </h1>
-        {% if current_user.role in ['Admin', 'HR Officer'] %}
-        <a href="{{ url_for('attendance.mark') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Mark Attendance
-        </a>
-        {% endif %}
+        <p class="text-muted" style="margin: 0; font-size: 0.875rem;">
+            <i class="fas fa-info-circle"></i> Attendance is managed by employees through Check-In/Check-Out
+        </p>
     </div>
     
     <div class="search-filter-bar">
         <form method="GET" action="{{ url_for('attendance.list') }}" class="d-flex gap-2" style="flex-wrap: wrap;">
-            {% if current_user.role in ['Admin', 'HR Officer'] %}
+            {% if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer'] %}
             <select name="user_id" class="form-control" style="max-width: 200px;">
                 <option value="">All Employees</option>
                 {% for user in users %}
@@ -58,9 +56,6 @@
                     <th>Check Out</th>
                     <th>Working Hours</th>
                     <th>Status</th>
-                    {% if current_user.role in ['Admin', 'HR Officer'] %}
-                    <th>Actions</th>
-                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -83,22 +78,10 @@
                             <span class="badge badge-danger">Absent</span>
                         {% endif %}
                     </td>
-                    {% if current_user.role in ['Admin', 'HR Officer'] %}
-                    <td>
-                        <a href="{{ url_for('attendance.edit', attendance_id=attendance.id) }}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                        <form method="POST" action="{{ url_for('attendance.delete', attendance_id=attendance.id) }}" style="display: inline;">
-                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </form>
-                    </td>
-                    {% endif %}
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="{% if current_user.role == 'Employee' %}6{% else %}8{% endif %}" class="text-center">No attendance records found</td>
+                    <td colspan="{% if current_user.role == 'Employee' %}6{% else %}7{% endif %}" class="text-center">No attendance records found</td>
                 </tr>
                 {% endfor %}
             </tbody>
