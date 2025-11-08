@@ -6,6 +6,7 @@ from app.utils.decorators import admin_required, hr_required, employee_or_above_
 from app.utils.validators import validate_email, validate_phone, validate_password, validate_employee_id
 from app.utils.employee_utils import generate_login_id, generate_random_password
 from datetime import datetime
+from sqlalchemy import or_
 
 bp = Blueprint('employees', __name__)
 
@@ -13,12 +14,13 @@ bp = Blueprint('employees', __name__)
 @login_required
 def list():
     # Only Admin and HR Officer can see full list with actions
-    # Payroll Officer cannot access employee management
+    # Payroll Officer and Employees cannot access employee management
     if current_user.role not in ['Admin', 'HR Officer']:
         if current_user.role == 'Employee':
-            return redirect(url_for('employees.directory'))
+            flash('You do not have permission to access employee management', 'danger')
+            return redirect(url_for('settings.profile'))
         flash('You do not have permission to access employee management', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('employees.directory'))
     
     if current_user.role in ['Admin', 'HR Officer']:
         search = request.args.get('search', '').strip()
@@ -26,7 +28,7 @@ def list():
         
         if search:
             query = query.filter(
-                db.or_(
+                or_(
                     User.name.ilike(f'%{search}%'),
                     User.employee_id.ilike(f'%{search}%'),
                     User.email.ilike(f'%{search}%')
@@ -41,8 +43,17 @@ def list():
 
 @bp.route('/directory')
 @login_required
-@employee_or_above_required
 def directory():
+    # Only Admin, HR Officer, and Payroll Officer can access Employee Directory
+    # Employees cannot see the directory
+    if current_user.role == 'Employee':
+        flash('You do not have permission to access the employee directory', 'danger')
+        return redirect(url_for('settings.profile'))
+    
+    if current_user.role not in ['Admin', 'HR Officer', 'Payroll Officer']:
+        flash('You do not have permission to access this page', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+    
     from app.models import Attendance, Leave
     from datetime import date, datetime
     
@@ -186,14 +197,20 @@ def register():
 
 @bp.route('/<int:user_id>/edit', methods=['GET', 'POST'])
 @login_required
-@hr_required
 def edit(user_id):
     user = User.query.get_or_404(user_id)
+    
+    # Permission checks: Only Admin and HR Officer can edit employee profiles
+    if current_user.role not in ['Admin', 'HR Officer']:
+        flash('You do not have permission to edit employee profiles', 'danger')
+        if current_user.role == 'Employee':
+            return redirect(url_for('settings.profile'))
+        return redirect(url_for('employees.directory'))
     
     # HR Officers can only edit employees
     if current_user.role == 'HR Officer' and user.role != 'Employee':
         flash('You can only edit employee profiles', 'danger')
-        return redirect(url_for('employees.list'))
+        return redirect(url_for('employees.directory'))
     
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -260,8 +277,33 @@ def delete(user_id):
 
 @bp.route('/<int:user_id>/view')
 @login_required
-@employee_or_above_required
 def view(user_id):
     user = User.query.get_or_404(user_id)
-    return render_template('employees/view.html', user=user)
+    
+    # Permission checks:
+    # - Employees can only view their own profile
+    # - Admin, HR Officer, Payroll Officer can view any employee
+    if current_user.role == 'Employee' and current_user.id != user_id:
+        flash('You can only view your own profile', 'danger')
+        return redirect(url_for('settings.profile'))
+    
+    # Determine if profile should be editable
+    can_edit = False
+    can_edit_salary = False
+    
+    if current_user.role == 'Admin':
+        can_edit = True
+        can_edit_salary = True
+    elif current_user.role == 'HR Officer':
+        can_edit = True  # HR can edit employee profiles
+        can_edit_salary = False
+    elif current_user.role == 'Payroll Officer':
+        can_edit = False  # Payroll cannot edit profiles
+        can_edit_salary = True  # But can edit salary components
+    
+    return render_template('employees/view.html', 
+                         user=user, 
+                         can_edit=can_edit,
+                         can_edit_salary=can_edit_salary,
+                         is_own_profile=(current_user.id == user_id))
 

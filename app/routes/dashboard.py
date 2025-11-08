@@ -14,15 +14,19 @@ def dashboard():
     user = current_user
     role = user.role
     
-    # Employees should be redirected to employees directory page
+    # Role-based redirect
     if role == 'Employee':
-        return redirect(url_for('employees.directory'))
+        # Employees land on My Profile
+        return redirect(url_for('settings.profile'))
     elif role == 'Admin':
-        return admin_dashboard()
+        # Admin lands on Employee Directory
+        return redirect(url_for('employees.directory'))
     elif role == 'HR Officer':
-        return hr_dashboard()
+        # HR Officer lands on Employee Directory
+        return redirect(url_for('employees.directory'))
     elif role == 'Payroll Officer':
-        return payroll_dashboard()
+        # Payroll Officer lands on Employee Directory
+        return redirect(url_for('employees.directory'))
     else:
         return redirect(url_for('employees.directory'))
 

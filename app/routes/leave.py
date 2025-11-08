@@ -5,6 +5,7 @@ from app.models import Leave, User
 from app.utils.decorators import admin_required, hr_required, payroll_required, employee_or_above_required
 from app.utils.validators import validate_date_range
 from datetime import datetime, date
+from sqlalchemy import or_
 
 bp = Blueprint('leave', __name__)
 
@@ -21,7 +22,7 @@ def list():
         query = Leave.query
         if search:
             query = query.join(User).filter(
-                db.or_(
+                or_(
                     User.name.ilike(f'%{search}%'),
                     User.employee_id.ilike(f'%{search}%')
                 )

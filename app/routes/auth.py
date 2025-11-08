@@ -98,7 +98,13 @@ def login():
             login_user(user)
             next_page = request.args.get('next')
             if not next_page or not next_page.startswith('/'):
-                next_page = url_for('dashboard.dashboard')
+                # Role-based redirect after login
+                if user.role == 'Employee':
+                    # Employees land on My Profile
+                    next_page = url_for('settings.profile')
+                else:
+                    # Admin, HR Officer, Payroll Officer land on Employee Directory
+                    next_page = url_for('employees.directory')
             flash(f'Welcome back, {user.name}!', 'success')
             return redirect(next_page)
         else:
@@ -228,7 +234,13 @@ def google_callback():
         # Log in the user
         login_user(user)
         flash(f'Welcome, {user.name}!', 'success')
-        return redirect(url_for('dashboard.dashboard'))
+        # Role-based redirect after login
+        if user.role == 'Employee':
+            # Employees land on My Profile
+            return redirect(url_for('settings.profile'))
+        else:
+            # Admin, HR Officer, Payroll Officer land on Employee Directory
+            return redirect(url_for('employees.directory'))
         
     except Exception as e:
         flash(f'Google authentication error: {str(e)}', 'danger')

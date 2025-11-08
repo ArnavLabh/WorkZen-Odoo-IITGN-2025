@@ -4,6 +4,7 @@ from app import db
 from app.models import Attendance, User
 from app.utils.decorators import admin_required, hr_required, employee_or_above_required
 from datetime import datetime, date, time
+from sqlalchemy import or_
 
 bp = Blueprint('attendance', __name__)
 
@@ -27,7 +28,7 @@ def list():
         
         if search:
             query = query.join(User).filter(
-                db.or_(
+                or_(
                     User.name.ilike(f'%{search}%'),
                     User.employee_id.ilike(f'%{search}%')
                 )
@@ -150,14 +151,17 @@ def checkin():
     
     if existing and existing.check_in:
         flash('You have already checked in today', 'warning')
-        return redirect(request.referrer or url_for('employees.directory'))
+        # Redirect based on role
+        if current_user.role == 'Employee':
+            return redirect(request.referrer or url_for('settings.profile'))
+        else:
+            return redirect(request.referrer or url_for('employees.directory'))
     
     check_in_time = datetime.now().time()
     
     if existing:
         existing.check_in = check_in_time
-        if existing.status == 'Absent':
-            existing.status = 'Present'
+        existing.status = 'Present'  # Always set to Present when checking in
         existing.calculate_working_hours()
     else:
         attendance = Attendance(
@@ -166,11 +170,16 @@ def checkin():
             check_in=check_in_time,
             status='Present'
         )
+        attendance.calculate_working_hours()
         db.session.add(attendance)
     
     db.session.commit()
     flash('Checked in successfully!', 'success')
-    return redirect(request.referrer or url_for('employees.directory'))
+    # Redirect based on role
+    if current_user.role == 'Employee':
+        return redirect(request.referrer or url_for('settings.profile'))
+    else:
+        return redirect(request.referrer or url_for('employees.directory'))
 
 @bp.route('/checkout', methods=['POST'])
 @login_required
@@ -184,18 +193,30 @@ def checkout():
     
     if not attendance:
         flash('Please check in first', 'danger')
-        return redirect(request.referrer or url_for('employees.directory'))
+        # Redirect based on role
+        if current_user.role == 'Employee':
+            return redirect(request.referrer or url_for('settings.profile'))
+        else:
+            return redirect(request.referrer or url_for('employees.directory'))
     
     if attendance.check_out:
         flash('You have already checked out today', 'warning')
-        return redirect(request.referrer or url_for('employees.directory'))
+        # Redirect based on role
+        if current_user.role == 'Employee':
+            return redirect(request.referrer or url_for('settings.profile'))
+        else:
+            return redirect(request.referrer or url_for('employees.directory'))
     
     attendance.check_out = datetime.now().time()
     attendance.calculate_working_hours()
     db.session.commit()
     
     flash('Checked out successfully!', 'success')
-    return redirect(request.referrer or url_for('employees.directory'))
+    # Redirect based on role
+    if current_user.role == 'Employee':
+        return redirect(request.referrer or url_for('settings.profile'))
+    else:
+        return redirect(request.referrer or url_for('employees.directory'))
 
 @bp.route('/<int:attendance_id>/edit', methods=['GET', 'POST'])
 @login_required
