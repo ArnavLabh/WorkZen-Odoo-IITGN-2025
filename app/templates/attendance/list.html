@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-check"></i> Attendance
+        </h1>
+        {% if current_user.role == 'Employee' %}
+        <a href="{{ url_for('attendance.mark') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Mark Attendance
+        </a>
+        {% elif current_user.role in ['Admin', 'HR Officer'] %}
+        <a href="{{ url_for('attendance.mark') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Mark Attendance
+        </a>
+        {% endif %}
+    </div>
+    
+    <div class="search-filter-bar">
+        <form method="GET" action="{{ url_for('attendance.list') }}" class="d-flex gap-2" style="flex-wrap: wrap;">
+            {% if current_user.role in ['Admin', 'HR Officer'] %}
+            <select name="user_id" class="form-control" style="max-width: 200px;">
+                <option value="">All Employees</option>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if user_filter == user.id|string %}selected{% endif %}>
+                    {{ user.name }} ({{ user.employee_id }})
+                </option>
+                {% endfor %}
+            </select>
+            <input type="text" 
+                   name="search" 
+                   class="form-control" 
+                   placeholder="Search..." 
+                   value="{{ search }}">
+            {% endif %}
+            <input type="date" 
+                   name="date" 
+                   class="form-control" 
+                   value="{{ filter_date }}">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Filter
+            </button>
+            <a href="{{ url_for('attendance.list') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </form>
+    </div>
+    
+    <div class="table-container">
+        <table class="table" id="data-table">
+            <thead>
+                <tr>
+                    {% if current_user.role != 'Employee' %}
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    {% endif %}
+                    <th>Date</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Working Hours</th>
+                    <th>Status</th>
+                    {% if current_user.role in ['Admin', 'HR Officer'] %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendances %}
+                <tr>
+                    {% if current_user.role != 'Employee' %}
+                    <td>{{ attendance.user.employee_id }}</td>
+                    <td>{{ attendance.user.name }}</td>
+                    {% endif %}
+                    <td>{{ attendance.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ attendance.check_in.strftime('%H:%M') if attendance.check_in else '-' }}</td>
+                    <td>{{ attendance.check_out.strftime('%H:%M') if attendance.check_out else '-' }}</td>
+                    <td>{{ "%.1f"|format(attendance.working_hours) }} hrs</td>
+                    <td>
+                        {% if attendance.status == 'Present' %}
+                            <span class="badge badge-success">Present</span>
+                        {% elif attendance.status == 'Half Day' %}
+                            <span class="badge badge-warning">Half Day</span>
+                        {% else %}
+                            <span class="badge badge-danger">Absent</span>
+                        {% endif %}
+                    </td>
+                    {% if current_user.role in ['Admin', 'HR Officer'] %}
+                    <td>
+                        <a href="{{ url_for('attendance.edit', attendance_id=attendance.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        <form method="POST" action="{{ url_for('attendance.delete', attendance_id=attendance.id) }}" style="display: inline;">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if current_user.role == 'Employee' %}6{% else %}8{% endif %}" class="text-center">No attendance records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

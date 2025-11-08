@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Report - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-check"></i> Attendance Report
+        </h1>
+        <a href="{{ url_for('reports.generate') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <form method="GET" action="{{ url_for('reports.attendance') }}" class="mb-3">
+        <div class="row">
+            {% if current_user.role in ['Admin', 'HR Officer'] %}
+            <div class="col-3">
+                <select name="user_id" class="form-control">
+                    <option value="">All Employees</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if user_id == user.id|string %}selected{% endif %}>
+                        {{ user.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-3">
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}" placeholder="Start Date">
+            </div>
+            <div class="col-3">
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}" placeholder="End Date">
+            </div>
+            <div class="col-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Generate
+                </button>
+            </div>
+        </div>
+    </form>
+    
+    <div class="stats-grid mb-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_days }}</div>
+            <div class="stat-label">Total Days</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ present_days }}</div>
+            <div class="stat-label">Present Days</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ absent_days }}</div>
+            <div class="stat-label">Absent Days</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ half_days }}</div>
+            <div class="stat-label">Half Days</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ "%.1f"|format(total_hours) }}</div>
+            <div class="stat-label">Total Hours</div>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    {% if current_user.role != 'Employee' %}
+                    <th>Employee</th>
+                    {% endif %}
+                    <th>Date</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Working Hours</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendances %}
+                <tr>
+                    {% if current_user.role != 'Employee' %}
+                    <td>{{ attendance.user.name }}</td>
+                    {% endif %}
+                    <td>{{ attendance.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ attendance.check_in.strftime('%H:%M') if attendance.check_in else '-' }}</td>
+                    <td>{{ attendance.check_out.strftime('%H:%M') if attendance.check_out else '-' }}</td>
+                    <td>{{ "%.1f"|format(attendance.working_hours) }} hrs</td>
+                    <td>
+                        {% if attendance.status == 'Present' %}
+                            <span class="badge badge-success">Present</span>
+                        {% elif attendance.status == 'Half Day' %}
+                            <span class="badge badge-warning">Half Day</span>
+                        {% else %}
+                            <span class="badge badge-danger">Absent</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if current_user.role == 'Employee' %}5{% else %}6{% endif %}" class="text-center">No records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

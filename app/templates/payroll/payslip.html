@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Payslip - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-file-invoice-dollar"></i> Payslip
+        </h1>
+        <a href="{% if current_user.role == 'Employee' %}{{ url_for('payroll.my_payslips') }}{% else %}{{ url_for('payroll.list') }}{% endif %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <div style="max-width: 800px; margin: 0 auto;">
+        <div class="card mb-3">
+            <h2>Employee Details</h2>
+            <table class="table">
+                <tr>
+                    <th width="200">Name</th>
+                    <td>{{ payroll.user.name }}</td>
+                </tr>
+                <tr>
+                    <th>Employee ID</th>
+                    <td>{{ payroll.user.employee_id }}</td>
+                </tr>
+                <tr>
+                    <th>Role</th>
+                    <td>{{ payroll.user.role }}</td>
+                </tr>
+                <tr>
+                    <th>Month</th>
+                    <td>{{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][payroll.month] }}</td>
+                </tr>
+                <tr>
+                    <th>Year</th>
+                    <td>{{ payroll.year }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="card mb-3">
+            <h2>Earnings</h2>
+            <table class="table">
+                <tr>
+                    <th width="200">Basic Salary</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.basic_salary) }}</td>
+                </tr>
+                <tr>
+                    <th>HRA</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.hra) }}</td>
+                </tr>
+                <tr>
+                    <th>Conveyance</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.conveyance) }}</td>
+                </tr>
+                <tr>
+                    <th>Other Allowances</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.other_allowances) }}</td>
+                </tr>
+                <tr style="font-weight: bold; border-top: 2px solid var(--border-color);">
+                    <th>Gross Salary</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.gross_salary) }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="card mb-3">
+            <h2>Deductions</h2>
+            <table class="table">
+                <tr>
+                    <th width="200">PF Contribution</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.pf_contribution) }}</td>
+                </tr>
+                <tr>
+                    <th>Professional Tax</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.professional_tax) }}</td>
+                </tr>
+                <tr>
+                    <th>Other Deductions</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.other_deductions) }}</td>
+                </tr>
+                <tr style="font-weight: bold; border-top: 2px solid var(--border-color);">
+                    <th>Total Deductions</th>
+                    <td class="text-right">₹{{ "%.2f"|format(payroll.total_deductions) }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="card" style="background-color: var(--primary-color); color: white;">
+            <h2 style="color: white; margin: 0;">Net Pay</h2>
+            <div style="font-size: 2rem; font-weight: bold; text-align: right;">
+                ₹{{ "%.2f"|format(payroll.net_salary) }}
+            </div>
+            <div style="text-align: right;">
+                Status: 
+                {% if payroll.status == 'Paid' %}
+                    <span class="badge badge-success">Paid</span>
+                {% else %}
+                    <span class="badge badge-warning">Unpaid</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-chart-bar"></i> Reports
+        </h1>
+    </div>
+    
+    <div class="row">
+        {% if current_user.role != 'Employee' %}
+        <div class="col-4">
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-check"></i> Attendance Report
+                </h3>
+                <p>Generate attendance reports with filters</p>
+                <a href="{{ url_for('reports.attendance') }}" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if current_user.role != 'Employee' %}
+        <div class="col-4">
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-times"></i> Leave Report
+                </h3>
+                <p>Generate leave reports with filters</p>
+                <a href="{{ url_for('reports.leave') }}" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+        <div class="col-4">
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-money-bill-wave"></i> Payroll Report
+                </h3>
+                <p>Generate payroll reports</p>
+                <a href="{{ url_for('reports.payroll') }}" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if current_user.role == 'Employee' %}
+        <div class="col-6">
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-check"></i> My Attendance Report
+                </h3>
+                <p>View your attendance report</p>
+                <a href="{{ url_for('reports.attendance') }}" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </a>
+            </div>
+        </div>
+        
+        <div class="col-6">
+            <div class="card">
+                <h3 class="card-title">
+                    <i class="fas fa-calendar-times"></i> My Leave Report
+                </h3>
+                <p>View your leave report</p>
+                <a href="{{ url_for('reports.leave') }}" class="btn btn-primary">
+                    <i class="fas fa-file-alt"></i> Generate Report
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

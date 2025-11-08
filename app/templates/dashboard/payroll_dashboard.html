@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Dashboard - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-tachometer-alt"></i> Payroll Officer Dashboard
+        </h1>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_employees }}</div>
+            <div class="stat-label">
+                <i class="fas fa-users"></i> Total Employees
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ payroll_this_month }}</div>
+            <div class="stat-label">
+                <i class="fas fa-money-bill-wave"></i> Payroll This Month
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ pending_leaves }}</div>
+            <div class="stat-label">
+                <i class="fas fa-clock"></i> Pending Leaves
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-money-bill-wave"></i> Recent Payrolls
+                </h2>
+                <a href="{{ url_for('payroll.list') }}" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Month/Year</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payroll in recent_payrolls %}
+                        <tr>
+                            <td>{{ payroll.user.name }}</td>
+                            <td>{{ payroll.month }}/{{ payroll.year }}</td>
+                            <td>₹{{ "%.2f"|format(payroll.net_salary) }}</td>
+                            <td>
+                                {% if payroll.status == 'Paid' %}
+                                    <span class="badge badge-success">Paid</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Unpaid</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No payroll records found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-calendar-times"></i> Recent Leave Requests
+                </h2>
+                <a href="{{ url_for('leave.list') }}" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Leave Type</th>
+                            <th>Start Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in recent_leaves %}
+                        <tr>
+                            <td>{{ leave.user.name }}</td>
+                            <td>{{ leave.leave_type }}</td>
+                            <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if leave.status == 'Approved' %}
+                                    <span class="badge badge-success">Approved</span>
+                                {% elif leave.status == 'Rejected' %}
+                                    <span class="badge badge-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No leave requests found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

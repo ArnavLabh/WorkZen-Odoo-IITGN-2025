@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Leave Report - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-times"></i> Leave Report
+        </h1>
+        <a href="{{ url_for('reports.generate') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <form method="GET" action="{{ url_for('reports.leave') }}" class="mb-3">
+        <div class="row">
+            {% if current_user.role in ['Admin', 'HR Officer'] %}
+            <div class="col-3">
+                <select name="user_id" class="form-control">
+                    <option value="">All Employees</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if user_id == user.id|string %}selected{% endif %}>
+                        {{ user.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+            <div class="col-2">
+                <select name="status" class="form-control">
+                    <option value="">All Status</option>
+                    <option value="Pending" {% if status_filter == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="Approved" {% if status_filter == 'Approved' %}selected{% endif %}>Approved</option>
+                    <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
+                </select>
+            </div>
+            <div class="col-3">
+                <input type="date" name="start_date" class="form-control" value="{{ start_date }}" placeholder="Start Date">
+            </div>
+            <div class="col-3">
+                <input type="date" name="end_date" class="form-control" value="{{ end_date }}" placeholder="End Date">
+            </div>
+            <div class="col-1">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Generate
+                </button>
+            </div>
+        </div>
+    </form>
+    
+    <div class="stats-grid mb-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_leaves }}</div>
+            <div class="stat-label">Total Leaves</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ approved_leaves }}</div>
+            <div class="stat-label">Approved</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ rejected_leaves }}</div>
+            <div class="stat-label">Rejected</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ pending_leaves }}</div>
+            <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_days }}</div>
+            <div class="stat-label">Total Days (Approved)</div>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    {% if current_user.role != 'Employee' %}
+                    <th>Employee</th>
+                    {% endif %}
+                    <th>Leave Type</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Days</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for leave in leaves %}
+                <tr>
+                    {% if current_user.role != 'Employee' %}
+                    <td>{{ leave.user.name }}</td>
+                    {% endif %}
+                    <td>{{ leave.leave_type }}</td>
+                    <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ (leave.end_date - leave.start_date).days + 1 }}</td>
+                    <td>
+                        {% if leave.status == 'Approved' %}
+                            <span class="badge badge-success">Approved</span>
+                        {% elif leave.status == 'Rejected' %}
+                            <span class="badge badge-danger">Rejected</span>
+                        {% else %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{% if current_user.role == 'Employee' %}5{% else %}6{% endif %}" class="text-center">No records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

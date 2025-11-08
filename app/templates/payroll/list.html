@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-money-bill-wave"></i> Payroll
+        </h1>
+        <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Generate Payroll
+        </a>
+    </div>
+    
+    <div class="search-filter-bar">
+        <form method="GET" action="{{ url_for('payroll.list') }}" class="d-flex gap-2" style="flex-wrap: wrap;">
+            <input type="text" name="search" class="form-control" placeholder="Search..." value="{{ search }}">
+            <select name="month" class="form-control" style="max-width: 150px;">
+                <option value="">All Months</option>
+                {% for i in range(1, 13) %}
+                <option value="{{ i }}" {% if month_filter == i|string %}selected{% endif %}>
+                    {{ ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i] }}
+                </option>
+                {% endfor %}
+            </select>
+            <select name="year" class="form-control" style="max-width: 120px;">
+                <option value="">All Years</option>
+                {% for year in range(2020, 2030) %}
+                <option value="{{ year }}" {% if year_filter == year|string %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Filter
+            </button>
+            <a href="{{ url_for('payroll.list') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+        </form>
+    </div>
+    
+    <div class="table-container">
+        <table class="table" id="data-table">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Gross Salary</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payroll in payrolls %}
+                <tr>
+                    <td>{{ payroll.user.employee_id }}</td>
+                    <td>{{ payroll.user.name }}</td>
+                    <td>{{ ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][payroll.month] }}</td>
+                    <td>{{ payroll.year }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.gross_salary) }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.total_deductions) }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.net_salary) }}</td>
+                    <td>
+                        {% if payroll.status == 'Paid' %}
+                            <span class="badge badge-success">Paid</span>
+                        {% else %}
+                            <span class="badge badge-warning">Unpaid</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <a href="{{ url_for('payroll.edit', payroll_id=payroll.id) }}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" class="text-center">No payroll records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

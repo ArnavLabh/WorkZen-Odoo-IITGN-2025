@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Login - WorkZen{% endblock %}
+
+{% block content %}
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="card" style="max-width: 400px; width: 100%; margin: 2rem;">
+        <div class="card-header" style="border: none; text-align: center; padding-bottom: 0;">
+            <h1 style="color: var(--primary-color); margin-bottom: 0.5rem;">
+                <i class="fas fa-briefcase"></i> WorkZen
+            </h1>
+            <p style="color: var(--text-secondary);">Sign in to your account</p>
+        </div>
+        
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="form-group">
+                <label class="form-label" for="email">
+                    <i class="fas fa-envelope"></i> Email
+                </label>
+                <input type="email" class="form-control" id="email" name="email" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">
+                    <i class="fas fa-lock"></i> Password
+                </label>
+                <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+        </form>
+        
+        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+            <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
+                Don't have an account?
+            </p>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-secondary" style="width: 100%;">
+                <i class="fas fa-user-plus"></i> Register as Admin/HR Officer
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}
+

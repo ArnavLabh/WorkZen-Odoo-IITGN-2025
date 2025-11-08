@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}View Employee - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-user"></i> Employee Profile
+        </h1>
+        <a href="{{ url_for('employees.directory') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-4">
+            <div class="text-center">
+                <div class="employee-avatar" style="margin: 0 auto 1rem; width: 120px; height: 120px; font-size: 3rem;">
+                    {{ user.name[0].upper() }}
+                </div>
+                <h2>{{ user.name }}</h2>
+                <p><span class="badge badge-info">{{ user.role }}</span></p>
+            </div>
+        </div>
+        <div class="col-8">
+            <table class="table">
+                <tr>
+                    <th width="200">Employee ID</th>
+                    <td>{{ user.employee_id }}</td>
+                </tr>
+                <tr>
+                    <th>Email</th>
+                    <td>{{ user.email }}</td>
+                </tr>
+                <tr>
+                    <th>Date of Joining</th>
+                    <td>{{ user.date_of_joining.strftime('%Y-%m-%d') }}</td>
+                </tr>
+                <tr>
+                    <th>Contact Number</th>
+                    <td>{{ user.contact_number or '-' }}</td>
+                </tr>
+                <tr>
+                    <th>Address</th>
+                    <td>{{ user.address or '-' }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

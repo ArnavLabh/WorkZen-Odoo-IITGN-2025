@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="{{ g.locale or 'en' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}WorkZen - HRMS{% endblock %}</title>
+    
+    <!-- Google Fonts - Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <header class="header">
+        <div class="header-left">
+            <button id="sidebar-toggle" class="btn btn-secondary" style="display: none;">
+                <i class="fas fa-bars"></i>
+            </button>
+            <a href="{{ url_for('dashboard.dashboard') }}" class="logo">
+                <i class="fas fa-briefcase"></i> WorkZen
+            </a>
+        </div>
+        <div class="header-right">
+            <!-- Language Selector -->
+            <div class="language-selector">
+                <button class="lang-btn {% if g.locale == 'en' %}active{% endif %}" onclick="setLanguage('en')">EN</button>
+                <button class="lang-btn {% if g.locale == 'hi' %}active{% endif %}" onclick="setLanguage('hi')">HI</button>
+                <button class="lang-btn {% if g.locale == 'gu' %}active{% endif %}" onclick="setLanguage('gu')">GU</button>
+            </div>
+            
+            <!-- Theme Toggle -->
+            <button id="theme-toggle" class="theme-toggle">
+                <i class="fas fa-moon" id="theme-icon"></i>
+            </button>
+            
+            <!-- Profile Dropdown -->
+            <div class="profile-dropdown">
+                <button id="profile-btn" class="profile-btn">
+                    <div class="avatar">{{ current_user.name[0].upper() }}</div>
+                    <span>{{ current_user.name }}</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div id="dropdown-menu" class="dropdown-menu">
+                    <a href="{{ url_for('settings.profile') }}" class="dropdown-item">
+                        <i class="fas fa-user"></i> My Profile
+                    </a>
+                    <a href="{{ url_for('settings.change_password') }}" class="dropdown-item">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
+                    <div class="dropdown-item" style="border-top: 1px solid var(--border-color); margin-top: 0.5rem; padding-top: 0.75rem;">
+                        <a href="{{ url_for('auth.logout') }}" class="dropdown-item" style="padding: 0;">
+                            <i class="fas fa-sign-out-alt"></i> Log Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container-fluid">
+        <aside class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="sidebar-item">
+                    <a href="{{ url_for('dashboard.dashboard') }}" class="sidebar-link {% if request.endpoint == 'dashboard.dashboard' %}active{% endif %}">
+                        <i class="fas fa-home"></i>
+                        <span>{{ _('Home') }}</span>
+                    </a>
+                </li>
+                
+                {% if current_user.role in ['Admin', 'HR Officer'] %}
+                <li class="sidebar-item">
+                    <a href="{{ url_for('employees.list') }}" class="sidebar-link {% if request.endpoint.startswith('employees') %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>{{ _('Employees') }}</span>
+                    </a>
+                </li>
+                {% elif current_user.role == 'Employee' %}
+                <li class="sidebar-item">
+                    <a href="{{ url_for('employees.directory') }}" class="sidebar-link {% if request.endpoint == 'employees.directory' %}active{% endif %}">
+                        <i class="fas fa-address-book"></i>
+                        <span>{{ _('Employee Directory') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="sidebar-item">
+                    <a href="{{ url_for('attendance.list') }}" class="sidebar-link {% if request.endpoint.startswith('attendance') %}active{% endif %}">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>{{ _('Attendance') }}</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a href="{{ url_for('leave.list') }}" class="sidebar-link {% if request.endpoint.startswith('leave') %}active{% endif %}">
+                        <i class="fas fa-calendar-times"></i>
+                        <span>{{ _('Time Off') }}</span>
+                    </a>
+                </li>
+                
+                {% if current_user.role in ['Admin', 'Payroll Officer'] %}
+                <li class="sidebar-item">
+                    <a href="{{ url_for('payroll.list') }}" class="sidebar-link {% if request.endpoint.startswith('payroll') %}active{% endif %}">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>{{ _('Payroll') }}</span>
+                    </a>
+                </li>
+                {% elif current_user.role == 'Employee' %}
+                <li class="sidebar-item">
+                    <a href="{{ url_for('payroll.my_payslips') }}" class="sidebar-link {% if request.endpoint.startswith('payroll') %}active{% endif %}">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>{{ _('Payslip') }}</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                
+                <li class="sidebar-item">
+                    <a href="{{ url_for('reports.generate') }}" class="sidebar-link {% if request.endpoint.startswith('reports') %}active{% endif %}">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>{{ _('Reports') }}</span>
+                    </a>
+                </li>
+                
+                <li class="sidebar-item">
+                    <a href="{{ url_for('settings.profile') }}" class="sidebar-link {% if request.endpoint.startswith('settings') %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        <span>{{ _('Settings') }}</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        
+        <main class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% else %}
+    <div class="auth-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    {% endif %}
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+        function setLanguage(lang) {
+            fetch('/set_language', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ language: lang })
+            }).then(() => {
+                window.location.reload();
+            });
+        }
+        
+        // Update theme icon based on current theme
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = document.documentElement.getAttribute('data-theme');
+            const themeIcon = document.getElementById('theme-icon');
+            if (themeIcon) {
+                themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            
+            const themeToggle = document.getElementById('theme-toggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', function() {
+                    setTimeout(() => {
+                        const newTheme = document.documentElement.getAttribute('data-theme');
+                        themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                    }, 100);
+                });
+            }
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+
