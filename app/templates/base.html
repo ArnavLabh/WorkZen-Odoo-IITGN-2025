@@ -33,15 +33,15 @@
             <!-- Check-In/Check-Out Button -->
             {% if current_user.role == 'Employee' %}
             <div style="margin-right: 1rem;">
-                {% if is_checked_in and not is_checked_out %}
-                    <!-- Checked In - Show Green Check Out Button -->
+                {% if is_checked_in %}
+                    <!-- Currently Checked In - Show Green Check Out Button -->
                     <form method="POST" action="{{ url_for('attendance.checkout') }}" style="margin: 0;">
                         <button type="submit" class="btn btn-success btn-sm" style="background-color: #10b981; border-color: #10b981;">
                             <i class="fas fa-sign-out-alt"></i> Check Out
                         </button>
                     </form>
                 {% else %}
-                    <!-- Not Checked In or Checked Out - Show Red Check In Button -->
+                    <!-- Not Checked In (or Checked Out) - Show Red Check In Button -->
                     <form method="POST" action="{{ url_for('attendance.checkin') }}" style="margin: 0;">
                         <button type="submit" class="btn btn-danger btn-sm" style="background-color: #ef4444; border-color: #ef4444;">
                             <i class="fas fa-sign-in-alt"></i> Check In
