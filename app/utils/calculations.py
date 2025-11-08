@@ -113,7 +113,12 @@ def calculate_monthly_salary(user_id, month, year, settings):
     # Calculate salary components
     if use_new_structure:
         # New component-based structure
-        components = settings.salary_components.filter_by(is_active=True).order_by('display_order').all()
+        try:
+            components = settings.salary_components.filter_by(is_active=True).order_by('display_order').all()
+        except Exception:
+            # Table doesn't exist - fall back to legacy structure
+            components = []
+            use_new_structure = False
         
         if not components:
             # Fall back to legacy if no components defined

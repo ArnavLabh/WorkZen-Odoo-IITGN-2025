@@ -48,9 +48,8 @@
                     </td>
                     <td>
                         {% if settings %}
-                            {% set component_count = settings.salary_components.count() if settings.salary_components else 0 %}
-                            {% if component_count > 0 %}
-                                <span class="badge badge-info">{{ component_count }} component(s)</span>
+                            {% if settings.component_count is defined and settings.component_count > 0 %}
+                                <span class="badge badge-info">{{ settings.component_count }} component(s)</span>
                             {% elif settings.basic_salary and settings.basic_salary > 0 %}
                                 <span class="badge badge-secondary">Legacy structure</span>
                             {% else %}

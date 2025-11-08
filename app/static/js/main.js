@@ -73,8 +73,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Auto-dismiss alerts
-    const alerts = document.querySelectorAll('.alert');
+    // Auto-dismiss alerts (except credentials alerts which are persistent)
+    const alerts = document.querySelectorAll('.alert:not(.alert-credentials)');
     alerts.forEach(alert => {
         setTimeout(() => {
             alert.style.transition = 'opacity 0.5s';

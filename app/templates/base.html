@@ -30,37 +30,23 @@
             </a>
         </div>
         <div class="header-right">
-            <!-- Attendance Status Indicator and Check-In/Check-Out -->
+            <!-- Check-In/Check-Out Button -->
             {% if current_user.role == 'Employee' %}
-            <div style="display: flex; align-items: center; gap: 1rem; margin-right: 1rem;">
-                <!-- Circular Attendance Status Indicator (Non-clickable) -->
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <div style="width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--bg-primary); {% if is_checked_in and not is_checked_out %}background-color: #10b981;{% else %}background-color: #ef4444;{% endif %};" 
-                         title="{% if is_checked_in and not is_checked_out %}Checked In{% else %}Not Checked In{% endif %}"></div>
-                </div>
-                
-                <!-- Check-In/Check-Out Buttons -->
-                {% if not is_checked_in %}
-                    <form method="POST" action="{{ url_for('attendance.checkin') }}" style="margin: 0;">
-                        <button type="submit" class="btn btn-success btn-sm">
-                            <i class="fas fa-sign-in-alt"></i> Check IN
+            <div style="margin-right: 1rem;">
+                {% if is_checked_in and not is_checked_out %}
+                    <!-- Checked In - Show Green Check Out Button -->
+                    <form method="POST" action="{{ url_for('attendance.checkout') }}" style="margin: 0;">
+                        <button type="submit" class="btn btn-success btn-sm" style="background-color: #10b981; border-color: #10b981;">
+                            <i class="fas fa-sign-out-alt"></i> Check Out
                         </button>
                     </form>
-                {% elif is_checked_in and not is_checked_out %}
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                            Since {{ check_in_time.strftime('%I:%M %p') if check_in_time else '' }}
-                        </span>
-                        <form method="POST" action="{{ url_for('attendance.checkout') }}" style="margin: 0;">
-                            <button type="submit" class="btn btn-warning btn-sm">
-                                <i class="fas fa-sign-out-alt"></i> Check Out
-                            </button>
-                        </form>
-                    </div>
                 {% else %}
-                    <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                        <i class="fas fa-check-circle" style="color: var(--success-color);"></i> Checked Out
-                    </span>
+                    <!-- Not Checked In or Checked Out - Show Red Check In Button -->
+                    <form method="POST" action="{{ url_for('attendance.checkin') }}" style="margin: 0;">
+                        <button type="submit" class="btn btn-danger btn-sm" style="background-color: #ef4444; border-color: #ef4444;">
+                            <i class="fas fa-sign-in-alt"></i> Check In
+                        </button>
+                    </form>
                 {% endif %}
             </div>
             {% endif %}
@@ -98,13 +84,13 @@
                     </a>
                 </li>
                 
-                {% if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer'] %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('employees.directory') }}" class="sidebar-link {% if request.endpoint.startswith('employees') %}active{% endif %}">
                         <i class="fas fa-address-book"></i>
                         <span>Employee Directory</span>
                     </a>
                 </li>
+                
                 {% if current_user.role in ['Admin', 'HR Officer'] %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('employees.list') }}" class="sidebar-link {% if request.endpoint == 'employees.list' %}active{% endif %}">
@@ -112,7 +98,6 @@
                         <span>Employee Management</span>
                     </a>
                 </li>
-                {% endif %}
                 {% endif %}
                 
                 <li class="sidebar-item">
@@ -145,11 +130,20 @@
                 </li>
                 {% endif %}
                 
-                {% if current_user.role != 'Employee' %}
+                {% if current_user.role in ['Admin', 'Payroll Officer'] %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('reports.generate') }}" class="sidebar-link {% if request.endpoint.startswith('reports') %}active{% endif %}">
                         <i class="fas fa-chart-bar"></i>
                         <span>Reports</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% if current_user.role == 'Admin' %}
+                <li class="sidebar-item">
+                    <a href="{{ url_for('auth.register') }}" class="sidebar-link {% if request.endpoint == 'auth.register' %}active{% endif %}">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Register User</span>
                     </a>
                 </li>
                 {% endif %}
@@ -160,9 +154,21 @@
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
+                        {% if category == 'credentials' %}
+                        <div class="alert alert-success alert-credentials" style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem;">
+                            <div style="flex: 1;">
+                                <strong><i class="fas fa-key"></i> Employee Credentials:</strong><br>
+                                {{ message }}
+                            </div>
+                            <button type="button" class="btn-close-alert" onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 1.5rem; color: inherit; opacity: 0.7; cursor: pointer; margin-left: 1rem; padding: 0 0.5rem;" title="Dismiss">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        {% else %}
                         <div class="alert alert-{{ category }}">
                             {{ message }}
                         </div>
+                        {% endif %}
                     {% endfor %}
                 {% endif %}
             {% endwith %}

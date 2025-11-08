@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Forbidden - WorkZen</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 2rem;
+        }
+        .error-code {
+            font-size: 6rem;
+            font-weight: bold;
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+        .error-message {
+            font-size: 1.5rem;
+            color: #374151;
+            margin-bottom: 1rem;
+        }
+        .error-description {
+            font-size: 1rem;
+            color: #6b7280;
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+        .btn-home {
+            padding: 0.75rem 1.5rem;
+            background-color: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .btn-home:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-code">403</div>
+        <div class="error-message">Access Forbidden</div>
+        <div class="error-description">
+            You do not have permission to access this resource. Please contact your administrator if you believe this is an error.
+        </div>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('dashboard.dashboard') }}" class="btn-home">Go to Dashboard</a>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn-home">Go to Login</a>
+        {% endif %}
+    </div>
+</body>
+</html>
+

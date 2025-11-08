@@ -1,8 +1,9 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, session, jsonify, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from app import db
 from app.models import User, PayrollSettings
 from app.utils.validators import validate_email, validate_password
+from app.utils.decorators import admin_required
 from config import Config
 import requests
 from datetime import datetime
@@ -11,9 +12,10 @@ from sqlalchemy import or_
 bp = Blueprint('auth', __name__)
 
 @bp.route('/register', methods=['GET', 'POST'])
+@login_required
+@admin_required
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard.dashboard'))
+    # Only Admin can register new users (manage user accounts)
     
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -44,7 +46,7 @@ def register():
         if password != confirm_password:
             errors.append('Passwords do not match')
         
-        if role not in ['Admin', 'HR Officer']:
+        if role not in ['Admin', 'HR Officer', 'Payroll Officer', 'Employee']:
             errors.append('Invalid role for registration')
         
         if errors:
@@ -68,8 +70,8 @@ def register():
             db.session.add(user)
             db.session.commit()
             
-            flash('Registration successful! Please login.', 'success')
-            return redirect(url_for('auth.login'))
+            flash('User registered successfully!', 'success')
+            return redirect(url_for('employees.list'))
     
     return render_template('auth/register.html')
 

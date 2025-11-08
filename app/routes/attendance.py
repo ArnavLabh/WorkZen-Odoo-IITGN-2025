@@ -1,10 +1,11 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, abort
 from flask_login import login_required, current_user
 from app import db
 from app.models import Attendance, User
-from app.utils.decorators import admin_required, hr_required, employee_or_above_required
+from app.utils.decorators import admin_required, hr_required, employee_or_above_required, role_required
 from datetime import datetime, date, time
 from sqlalchemy import or_
+from sqlalchemy.exc import OperationalError, InternalError, ProgrammingError
 
 bp = Blueprint('attendance', __name__)
 
@@ -12,6 +13,10 @@ bp = Blueprint('attendance', __name__)
 @login_required
 @employee_or_above_required
 def list():
+    # All roles can access attendance
+    # Employees see only their own attendance
+    # HR Officer, Payroll Officer, Admin can see all employees' attendance
+    
     # Get filter parameters
     search = request.args.get('search', '').strip()
     filter_date = request.args.get('date', '')
@@ -19,8 +24,11 @@ def list():
     
     # Build query based on role
     if current_user.role == 'Employee':
+        # Employees can only view their own attendance
         query = Attendance.query.filter_by(user_id=current_user.id)
+        users = []  # No user filter for employees
     else:
+        # HR Officer, Payroll Officer, Admin can view all attendance
         query = Attendance.query
         
         if user_filter:
@@ -33,6 +41,9 @@ def list():
                     User.employee_id.ilike(f'%{search}%')
                 )
             )
+        
+        # Get all users for filter
+        users = User.query.filter_by(role='Employee').order_by(User.name).all()
     
     if filter_date:
         try:
@@ -42,11 +53,6 @@ def list():
             pass
     
     attendances = query.order_by(Attendance.date.desc(), Attendance.user_id).limit(100).all()
-    
-    # Get all users for filter (Admin/HR/Payroll can view all)
-    users = []
-    if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer']:
-        users = User.query.filter_by(role='Employee').order_by(User.name).all()
     
     return render_template('attendance/list.html', 
                          attendances=attendances, 
@@ -59,83 +65,97 @@ def list():
 
 @bp.route('/checkin', methods=['POST'])
 @login_required
+@role_required(['Employee'])
 def checkin():
     """Check in for today - Employee only"""
-    # Only employees can check in
-    if current_user.role != 'Employee':
-        flash('Only employees can check in', 'danger')
-        return redirect(request.referrer or url_for('employees.directory'))
     
     today = date.today()
     user_id = current_user.id
     
-    # Check if already checked in today
-    existing = Attendance.query.filter_by(user_id=user_id, date=today).first()
+    try:
+        # Check if already checked in today
+        existing = Attendance.query.filter_by(user_id=user_id, date=today).first()
+        
+        if existing and existing.check_in:
+            flash('You have already checked in today', 'warning')
+            return redirect(request.referrer or url_for('settings.profile'))
+        
+        # Check if already checked out today (prevent checking in again after checkout)
+        if existing and existing.check_out:
+            flash('You have already checked out today', 'warning')
+            return redirect(request.referrer or url_for('settings.profile'))
+        
+        check_in_time = datetime.now().time()
+        
+        # Create new attendance entry on check-in
+        if existing:
+            # If record exists but no check-in, update it
+            existing.check_in = check_in_time
+            existing.status = 'Present'  # Always set to Present when checking in
+            existing.calculate_working_hours()
+        else:
+            # Create new attendance record
+            attendance = Attendance(
+                user_id=user_id,
+                date=today,
+                check_in=check_in_time,
+                status='Present'
+            )
+            attendance.calculate_working_hours()
+            db.session.add(attendance)
+        
+        db.session.commit()
+        flash('Checked in successfully!', 'success')
+    except (OperationalError, InternalError, ProgrammingError) as e:
+        # Transaction error - rollback
+        db.session.rollback()
+        flash('Error checking in. Please try again.', 'danger')
+    except Exception as e:
+        # Any other error - rollback
+        db.session.rollback()
+        flash('Error checking in. Please try again.', 'danger')
     
-    if existing and existing.check_in:
-        flash('You have already checked in today', 'warning')
-        return redirect(request.referrer or url_for('settings.profile'))
-    
-    # Check if already checked out today (prevent checking in again after checkout)
-    if existing and existing.check_out:
-        flash('You have already checked out today', 'warning')
-        return redirect(request.referrer or url_for('settings.profile'))
-    
-    check_in_time = datetime.now().time()
-    
-    # Create new attendance entry on check-in
-    if existing:
-        # If record exists but no check-in, update it
-        existing.check_in = check_in_time
-        existing.status = 'Present'  # Always set to Present when checking in
-        existing.calculate_working_hours()
-    else:
-        # Create new attendance record
-        attendance = Attendance(
-            user_id=user_id,
-            date=today,
-            check_in=check_in_time,
-            status='Present'
-        )
-        attendance.calculate_working_hours()
-        db.session.add(attendance)
-    
-    db.session.commit()
-    flash('Checked in successfully!', 'success')
     return redirect(request.referrer or url_for('settings.profile'))
 
 @bp.route('/checkout', methods=['POST'])
 @login_required
+@role_required(['Employee'])
 def checkout():
     """Check out for today - Employee only"""
-    # Only employees can check out
-    if current_user.role != 'Employee':
-        flash('Only employees can check out', 'danger')
-        return redirect(request.referrer or url_for('employees.directory'))
     
     today = date.today()
     user_id = current_user.id
     
-    attendance = Attendance.query.filter_by(user_id=user_id, date=today).first()
+    try:
+        attendance = Attendance.query.filter_by(user_id=user_id, date=today).first()
+        
+        if not attendance:
+            flash('Please check in first', 'danger')
+            return redirect(request.referrer or url_for('settings.profile'))
+        
+        if not attendance.check_in:
+            flash('Please check in first', 'danger')
+            return redirect(request.referrer or url_for('settings.profile'))
+        
+        if attendance.check_out:
+            flash('You have already checked out today', 'warning')
+            return redirect(request.referrer or url_for('settings.profile'))
+        
+        # Close attendance entry on check-out
+        attendance.check_out = datetime.now().time()
+        attendance.calculate_working_hours()
+        db.session.commit()
+        
+        flash('Checked out successfully!', 'success')
+    except (OperationalError, InternalError, ProgrammingError) as e:
+        # Transaction error - rollback
+        db.session.rollback()
+        flash('Error checking out. Please try again.', 'danger')
+    except Exception as e:
+        # Any other error - rollback
+        db.session.rollback()
+        flash('Error checking out. Please try again.', 'danger')
     
-    if not attendance:
-        flash('Please check in first', 'danger')
-        return redirect(request.referrer or url_for('settings.profile'))
-    
-    if not attendance.check_in:
-        flash('Please check in first', 'danger')
-        return redirect(request.referrer or url_for('settings.profile'))
-    
-    if attendance.check_out:
-        flash('You have already checked out today', 'warning')
-        return redirect(request.referrer or url_for('settings.profile'))
-    
-    # Close attendance entry on check-out
-    attendance.check_out = datetime.now().time()
-    attendance.calculate_working_hours()
-    db.session.commit()
-    
-    flash('Checked out successfully!', 'success')
     return redirect(request.referrer or url_for('settings.profile'))
 
 # Manual attendance editing and deletion have been removed - attendance is controlled exclusively by employees through Check-In/Check-Out

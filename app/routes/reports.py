@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
 from app import db
 from app.models import Attendance, Leave, Payroll, User
-from app.utils.decorators import employee_or_above_required, payroll_required
+from app.utils.decorators import employee_or_above_required, payroll_required, role_required
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, or_, and_
 
@@ -10,20 +10,18 @@ bp = Blueprint('reports', __name__)
 
 @bp.route('/')
 @login_required
+@role_required(['Admin', 'Payroll Officer'])
 def generate():
-    # Employees cannot access reports
-    if current_user.role == 'Employee':
-        flash('You do not have permission to access reports', 'danger')
-        return redirect(url_for('settings.profile'))
+    # Only Admin and Payroll Officer can access reports
+    # Employees and HR Officer cannot access
     return render_template('reports/generate.html')
 
 @bp.route('/attendance')
 @login_required
+@role_required(['Admin', 'HR Officer', 'Payroll Officer'])
 def attendance():
-    # Employees cannot access reports - they can only view their own data via attendance list
-    if current_user.role == 'Employee':
-        flash('You do not have permission to access reports', 'danger')
-        return redirect(url_for('settings.profile'))
+    # Only Admin, HR Officer, and Payroll Officer can access attendance reports
+    # Employees cannot access reports
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     user_id = request.args.get('user_id', '')
@@ -31,9 +29,7 @@ def attendance():
     query = Attendance.query
     
     # Filter by user
-    if current_user.role == 'Employee':
-        query = query.filter_by(user_id=current_user.id)
-    elif user_id:
+    if user_id:
         query = query.filter_by(user_id=user_id)
     
     # Filter by date range
@@ -79,11 +75,10 @@ def attendance():
 
 @bp.route('/leave')
 @login_required
+@role_required(['Admin', 'Payroll Officer'])
 def leave():
-    # Employees cannot access reports - they can only view their own leaves via leave list
-    if current_user.role == 'Employee':
-        flash('You do not have permission to access reports', 'danger')
-        return redirect(url_for('settings.profile'))
+    # Only Admin and Payroll Officer can access leave reports
+    # HR Officer and Employees cannot access
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     user_id = request.args.get('user_id', '')
@@ -92,9 +87,7 @@ def leave():
     query = Leave.query
     
     # Filter by user
-    if current_user.role == 'Employee':
-        query = query.filter_by(user_id=current_user.id)
-    elif user_id:
+    if user_id:
         query = query.filter_by(user_id=user_id)
     
     # Filter by status
@@ -145,8 +138,9 @@ def leave():
 
 @bp.route('/payroll')
 @login_required
-@payroll_required
+@role_required(['Admin', 'Payroll Officer'])
 def payroll():
+    # Only Admin and Payroll Officer can access payroll reports
     start_month = request.args.get('start_month', '')
     start_year = request.args.get('start_year', '')
     end_month = request.args.get('end_month', '')

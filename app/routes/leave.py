@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
 from app import db
 from app.models import Leave, User
-from app.utils.decorators import admin_required, hr_required, payroll_required, employee_or_above_required
+from app.utils.decorators import admin_required, hr_required, payroll_required, employee_or_above_required, role_required
 from app.utils.validators import validate_date_range
 from datetime import datetime, date
 from sqlalchemy import or_
@@ -13,12 +13,18 @@ bp = Blueprint('leave', __name__)
 @login_required
 @employee_or_above_required
 def list():
+    # All roles can access leave list
+    # Employees see only their own leaves
+    # HR Officer, Payroll Officer, Admin can see all leaves
+    
     search = request.args.get('search', '').strip()
     status_filter = request.args.get('status', '')
     
     if current_user.role == 'Employee':
+        # Employees can only view their own leaves
         query = Leave.query.filter_by(user_id=current_user.id)
     else:
+        # HR Officer, Payroll Officer, Admin can view all leaves
         query = Leave.query
         if search:
             query = query.join(User).filter(
@@ -36,11 +42,9 @@ def list():
 
 @bp.route('/apply', methods=['GET', 'POST'])
 @login_required
-@employee_or_above_required
+@role_required(['Employee'])
 def apply():
-    if current_user.role != 'Employee':
-        flash('Only employees can apply for leave', 'danger')
-        return redirect(url_for('leave.list'))
+    # Only employees can apply for leave
     
     if request.method == 'POST':
         leave_type = request.form.get('leave_type', '').strip()
@@ -90,11 +94,9 @@ def apply():
 
 @bp.route('/<int:leave_id>/approve', methods=['POST'])
 @login_required
+@role_required(['Admin', 'Payroll Officer'])
 def approve(leave_id):
-    # Payroll Officer and Admin can approve leaves (HR can allocate but Payroll approves)
-    if current_user.role not in ['Admin', 'Payroll Officer']:
-        flash('You do not have permission to approve leaves', 'danger')
-        return redirect(url_for('leave.list'))
+    # Payroll Officer and Admin can approve/reject leaves
     leave = Leave.query.get_or_404(leave_id)
     
     if leave.status != 'Pending':
@@ -111,11 +113,9 @@ def approve(leave_id):
 
 @bp.route('/<int:leave_id>/reject', methods=['POST'])
 @login_required
+@role_required(['Admin', 'Payroll Officer'])
 def reject(leave_id):
-    # Payroll Officer and Admin can reject leaves
-    if current_user.role not in ['Admin', 'Payroll Officer']:
-        flash('You do not have permission to reject leaves', 'danger')
-        return redirect(url_for('leave.list'))
+    # Payroll Officer and Admin can approve/reject leaves
     leave = Leave.query.get_or_404(leave_id)
     
     if leave.status != 'Pending':
@@ -138,8 +138,7 @@ def view(leave_id):
     
     # Employees can only view their own leaves
     if current_user.role == 'Employee' and leave.user_id != current_user.id:
-        flash('You can only view your own leave requests', 'danger')
-        return redirect(url_for('leave.list'))
+        abort(403)
     
     return render_template('leave/view.html', leave=leave)
 

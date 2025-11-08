@@ -1,17 +1,20 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
 from app import db
 from app.models import Payroll, PayrollSettings, SalaryComponent, User
-from app.utils.decorators import admin_required, payroll_required, employee_or_above_required
+from app.utils.decorators import admin_required, payroll_required, employee_or_above_required, role_required
 from app.utils.calculations import calculate_monthly_salary
 from datetime import datetime, date
+from sqlalchemy.exc import OperationalError, InternalError, ProgrammingError
 
 bp = Blueprint('payroll', __name__)
 
 @bp.route('/')
 @login_required
-@payroll_required
+@role_required(['Admin', 'Payroll Officer'])
 def list():
+    # Only Admin and Payroll Officer can access payroll list
+    # HR Officer and Employee cannot access
     search = request.args.get('search', '').strip()
     month_filter = request.args.get('month', '')
     year_filter = request.args.get('year', '')
@@ -42,8 +45,9 @@ def list():
 
 @bp.route('/generate', methods=['GET', 'POST'])
 @login_required
-@payroll_required
+@role_required(['Admin', 'Payroll Officer'])
 def generate():
+    # Only Admin and Payroll Officer can generate payroll
     if request.method == 'POST':
         user_id = request.form.get('user_id', '')
         month = request.form.get('month', '')
@@ -138,16 +142,20 @@ def view(payroll_id):
     payroll = Payroll.query.get_or_404(payroll_id)
     
     # Employees can only view their own payslips
+    # HR Officer cannot view payroll
     if current_user.role == 'Employee' and payroll.user_id != current_user.id:
-        flash('You can only view your own payslips', 'danger')
-        return redirect(url_for('payroll.my_payslips'))
+        abort(403)
+    
+    if current_user.role == 'HR Officer':
+        abort(403)
     
     return render_template('payroll/payslip.html', payroll=payroll)
 
 @bp.route('/<int:payroll_id>/edit', methods=['GET', 'POST'])
 @login_required
-@payroll_required
+@role_required(['Admin', 'Payroll Officer'])
 def edit(payroll_id):
+    # Only Admin and Payroll Officer can edit payroll
     payroll = Payroll.query.get_or_404(payroll_id)
     
     if request.method == 'POST':
@@ -186,11 +194,9 @@ def edit(payroll_id):
 
 @bp.route('/my-payslips')
 @login_required
-@employee_or_above_required
+@role_required(['Employee'])
 def my_payslips():
-    if current_user.role != 'Employee':
-        return redirect(url_for('payroll.list'))
-    
+    # Only employees can access their own payslips
     payrolls = Payroll.query.filter_by(user_id=current_user.id).order_by(
         Payroll.year.desc(), Payroll.month.desc()
     ).all()
@@ -199,13 +205,22 @@ def my_payslips():
 
 @bp.route('/salary-structure', methods=['GET', 'POST'])
 @login_required
-@payroll_required
+@role_required(['Admin', 'Payroll Officer'])
 def salary_structure_list():
+    # Only Admin and Payroll Officer can manage salary structures
+    # HR Officer cannot access
     """List all employees and their salary structures"""
     employees = User.query.filter_by(role='Employee').order_by(User.name).all()
     employee_settings = {}
     for emp in employees:
         settings = PayrollSettings.query.filter_by(user_id=emp.id).first()
+        if settings:
+            # Safely get component count
+            try:
+                settings.component_count = settings.salary_components.count()
+            except Exception:
+                # Table doesn't exist
+                settings.component_count = 0
         employee_settings[emp.id] = settings
     
     return render_template('payroll/salary_structure_list.html', 
@@ -214,16 +229,18 @@ def salary_structure_list():
 
 @bp.route('/salary-structure/<int:user_id>', methods=['GET', 'POST'])
 @login_required
-@payroll_required
+@role_required(['Admin', 'Payroll Officer'])
 def salary_structure(user_id):
+    # Only Admin and Payroll Officer can set salary structures
+    # HR Officer cannot access
     """Set or update salary structure for an employee"""
     from decimal import Decimal
     
     user = User.query.get_or_404(user_id)
     
+    # Salary structure can only be set for employees
     if user.role != 'Employee':
-        flash('Salary structure can only be set for employees', 'danger')
-        return redirect(url_for('payroll.salary_structure_list'))
+        abort(403)
     
     settings = PayrollSettings.query.filter_by(user_id=user_id).first()
     
@@ -364,7 +381,24 @@ def salary_structure(user_id):
             settings.updated_at = datetime.utcnow()
             
             # Delete existing components and recreate
-            SalaryComponent.query.filter_by(payroll_settings_id=settings.id).delete()
+            try:
+                SalaryComponent.query.filter_by(payroll_settings_id=settings.id).delete()
+            except Exception as e:
+                # Table doesn't exist - rollback and show error
+                db.session.rollback()
+                flash(f'Salary components table not found. Please run: python create_tables.py to create the table.', 'danger')
+                # Get default components for display
+                components = []
+                for comp_def in DEFAULT_COMPONENTS:
+                    components.append(type('Component', (), {
+                        'name': comp_def['name'],
+                        'computation_type': comp_def['computation_type'],
+                        'value': comp_def['value'],
+                        'base_for_percentage': comp_def['base_for_percentage'],
+                        'display_order': comp_def['display_order']
+                    })())
+                components = sorted(components, key=lambda x: x.display_order)
+                return render_template('payroll/salary_structure.html', user=user, settings=settings, components=components)
             
             for comp_data in components_data:
                 component = SalaryComponent(
@@ -382,7 +416,21 @@ def salary_structure(user_id):
             return redirect(url_for('payroll.salary_structure_list'))
     
     # GET request - get components or use defaults
-    components = list(settings.salary_components.all()) if settings else []
+    components = []
+    if settings:
+        try:
+            components = list(settings.salary_components.all())
+        except Exception as e:
+            # Handle case where salary_components table doesn't exist
+            # Rollback the failed transaction first
+            try:
+                db.session.rollback()
+            except:
+                pass
+            # Don't try to create table here - it causes transaction issues
+            # Just show error message
+            flash(f'Salary components table not found. Please run: python create_tables.py to create the table.', 'danger')
+            components = []
     if not components:
         # Create default components for display
         components = []

@@ -18,29 +18,8 @@ def create_app(config_class=Config):
     login_manager.init_app(app)
     migrate.init_app(app, db)
     
-    # Register event listeners to clean up invalid attributes before insert/update
-    from app.models import PayrollSettings
-    from sqlalchemy.orm import Session
-    
-    @event.listens_for(Session, 'before_flush', propagate=True)
-    def receive_before_flush(session, flush_context, instances):
-        """Remove invalid attributes from PayrollSettings objects before flush"""
-        for obj in session.new.union(session.dirty):
-            if isinstance(obj, PayrollSettings):
-                invalid_attrs = ['wage', 'wage_type']
-                for attr in invalid_attrs:
-                    if hasattr(obj, attr):
-                        try:
-                            # Remove from object's __dict__ directly
-                            if attr in obj.__dict__:
-                                del obj.__dict__[attr]
-                            # Also try to remove via delattr
-                            try:
-                                delattr(obj, attr)
-                            except:
-                                pass
-                        except (AttributeError, TypeError, KeyError):
-                            pass
+    # Note: wage and wage_type are now properties in PayrollSettings model, not database columns
+    # They are stored as non-persistent attributes (_wage, _wage_type) which SQLAlchemy ignores
     
     # For serverless environments, we don't test the connection on startup
     # Connections will be established lazily on first request
@@ -93,24 +72,46 @@ def create_app(config_class=Config):
         from flask_login import current_user
         from datetime import date
         from app.models import Attendance
+        from sqlalchemy.exc import OperationalError, InternalError, ProgrammingError
         
         if current_user.is_authenticated:
-            today = date.today()
-            today_attendance = Attendance.query.filter_by(
-                user_id=current_user.id,
-                date=today
-            ).first()
-            
-            is_checked_in = today_attendance and today_attendance.check_in is not None
-            is_checked_out = today_attendance and today_attendance.check_out is not None
-            check_in_time = today_attendance.check_in if today_attendance and today_attendance.check_in else None
-            
-            return {
-                'is_checked_in': is_checked_in,
-                'is_checked_out': is_checked_out,
-                'check_in_time': check_in_time,
-                'today_attendance': today_attendance
-            }
+            try:
+                today = date.today()
+                today_attendance = Attendance.query.filter_by(
+                    user_id=current_user.id,
+                    date=today
+                ).first()
+                
+                is_checked_in = today_attendance and today_attendance.check_in is not None
+                is_checked_out = today_attendance and today_attendance.check_out is not None
+                check_in_time = today_attendance.check_in if today_attendance and today_attendance.check_in else None
+                
+                return {
+                    'is_checked_in': is_checked_in,
+                    'is_checked_out': is_checked_out,
+                    'check_in_time': check_in_time,
+                    'today_attendance': today_attendance
+                }
+            except (OperationalError, InternalError, ProgrammingError) as e:
+                # Transaction error - rollback and return defaults
+                try:
+                    db.session.rollback()
+                except:
+                    pass
+                return {
+                    'is_checked_in': False,
+                    'is_checked_out': False,
+                    'check_in_time': None,
+                    'today_attendance': None
+                }
+            except Exception:
+                # Any other error - return defaults
+                return {
+                    'is_checked_in': False,
+                    'is_checked_out': False,
+                    'check_in_time': None,
+                    'today_attendance': None
+                }
         return {
             'is_checked_in': False,
             'is_checked_out': False,
@@ -132,14 +133,75 @@ def create_app(config_class=Config):
     @app.errorhandler(500)
     def internal_error(error):
         from flask import jsonify
+        from sqlalchemy.exc import OperationalError, InternalError, ProgrammingError
+        
+        # Rollback transaction on database errors
+        try:
+            if isinstance(error, (OperationalError, InternalError, ProgrammingError)):
+                db.session.rollback()
+        except:
+            pass
+        
         app.logger.error(f'Server Error: {error}', exc_info=True)
         # Return JSON for API compatibility, or simple HTML
         return jsonify({'error': 'Internal Server Error', 'message': str(error)}), 500
+    
+    # After request handler to rollback on transaction errors
+    @app.after_request
+    def after_request_handler(response):
+        from sqlalchemy.exc import OperationalError, InternalError, ProgrammingError
+        import traceback
+        
+        # Check if there was a database error
+        if response.status_code == 500:
+            try:
+                # Try to rollback any failed transaction
+                db.session.rollback()
+            except:
+                pass
+        return response
+    
+    # Teardown handler to ensure transactions are cleaned up
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        from sqlalchemy.exc import OperationalError, InternalError, ProgrammingError
+        
+        if exception:
+            # Rollback on any exception
+            try:
+                db.session.rollback()
+            except:
+                pass
+        # Flask-SQLAlchemy handles commits automatically, we just need to clean up on errors
     
     @app.errorhandler(404)
     def not_found_error(error):
         from flask import jsonify
         return jsonify({'error': 'Not Found', 'message': 'Page not found'}), 404
+    
+    @app.errorhandler(403)
+    def forbidden_error(error):
+        from flask import jsonify, render_template
+        from flask_login import current_user
+        
+        # Return JSON for API requests
+        if request.is_json or request.content_type == 'application/json':
+            return jsonify({'error': 'Forbidden', 'message': 'You do not have permission to access this resource'}), 403
+        
+        # Return HTML for web requests
+        return render_template('errors/403.html'), 403
+    
+    @app.errorhandler(401)
+    def unauthorized_error(error):
+        from flask import jsonify, redirect, url_for
+        from flask_login import current_user
+        
+        # Return JSON for API requests
+        if request.is_json or request.content_type == 'application/json':
+            return jsonify({'error': 'Unauthorized', 'message': 'Please log in to access this resource'}), 401
+        
+        # Redirect to login for web requests
+        return redirect(url_for('auth.login'))
     
     return app
 

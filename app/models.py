@@ -89,8 +89,8 @@ class PayrollSettings(db.Model):
     conveyance = db.Column(db.Numeric(10, 2), default=0.0)
     other_allowances = db.Column(db.Numeric(10, 2), default=0.0)
     # New fields
-    wage = db.Column(db.Numeric(10, 2), default=0.0)  # Fixed wage amount
-    wage_type = db.Column(db.String(20), default='Fixed')  # Currently only 'Fixed' is supported
+    # Note: wage and wage_type are NOT database columns - they are calculated from salary_components
+    # We use a property to access wage without storing it in the database
     pf_percentage = db.Column(db.Float, default=12.0)  # Default 12%
     professional_tax_amount = db.Column(db.Numeric(10, 2), default=200.0)  # Default 200
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -111,35 +111,72 @@ class PayrollSettings(db.Model):
         # This prevents SQLAlchemy from trying to insert columns that don't exist in the database
         filtered_kwargs = {k: v for k, v in kwargs.items() if k in self._valid_columns}
         super(PayrollSettings, self).__init__(**filtered_kwargs)
+        # Store wage/wage_type as non-persistent attributes (not in database)
+        if 'wage' in kwargs:
+            object.__setattr__(self, '_wage', kwargs['wage'])
+        if 'wage_type' in kwargs:
+            object.__setattr__(self, '_wage_type', kwargs.get('wage_type', 'Fixed'))
     
-    def __setattr__(self, name, value):
-        # Prevent setting invalid attributes that don't exist in the database
-        # This is critical to prevent SQLAlchemy from trying to insert non-existent columns
-        if name.startswith('_'):
-            # Allow private attributes (SQLAlchemy internals, etc.)
-            super(PayrollSettings, self).__setattr__(name, value)
-        elif name in self._valid_columns:
-            # Allow valid model columns
-            super(PayrollSettings, self).__setattr__(name, value)
-        elif name in ['wage', 'wage_type']:
-            # CRITICAL: Silently ignore attempts to set these invalid attributes
-            # They don't exist in the database schema, so we must not store them
-            # SQLAlchemy will try to insert them if they're set, causing the error
-            # We return without setting to prevent the attribute from being stored
-            return
-        else:
-            # For SQLAlchemy's internal attributes, allow them
-            # But don't set arbitrary user attributes that might confuse SQLAlchemy
-            if name.startswith('_sa_') or hasattr(self.__class__, name):
-                super(PayrollSettings, self).__setattr__(name, value)
-            # Otherwise, ignore unknown attributes to prevent SQLAlchemy errors
+    @property
+    def wage(self):
+        """
+        Get wage value. 
+        Since wage is not a database column, we return:
+        1. Stored _wage if explicitly set (during form processing)
+        2. Otherwise, calculate from salary components if they exist
+        3. Otherwise, return basic_salary as fallback
+        """
+        # If _wage is explicitly set (during form processing), return it
+        if hasattr(self, '_wage'):
+            stored_wage = getattr(self, '_wage', 0.0)
+            if stored_wage is not None:
+                return float(stored_wage)
+        
+        # Try to calculate from salary components
+        # This is a simplified calculation - the actual calculation with percentages
+        # happens in the payroll route when processing the form
+        try:
+            components = self.salary_components.filter_by(is_active=True).all()
+            if components:
+                # Sum all fixed components
+                # For percentage components, we can't calculate without knowing the base wage
+                # So we'll use a simple sum of fixed values as an approximation
+                total = sum(float(comp.value) for comp in components if comp.computation_type == 'Fixed')
+                # If we have a meaningful total, return it
+                if total > 0:
+                    return total
+        except Exception:
+            # Table doesn't exist or other error - fall back to basic_salary
+            pass
+        
+        # Fallback to basic_salary
+        return float(self.basic_salary) if self.basic_salary else 0.0
+    
+    @wage.setter
+    def wage(self, value):
+        """Store wage as non-persistent attribute"""
+        object.__setattr__(self, '_wage', float(value) if value else 0.0)
+    
+    @property
+    def wage_type(self):
+        """Return wage type (always 'Fixed' for now)"""
+        return getattr(self, '_wage_type', 'Fixed')
+    
+    @wage_type.setter
+    def wage_type(self, value):
+        """Store wage_type as non-persistent attribute"""
+        object.__setattr__(self, '_wage_type', value or 'Fixed')
     
     def __repr__(self):
         return f'<PayrollSettings {self.user_id}>'
     
     def get_component_by_name(self, name):
         """Get a salary component by its name"""
-        return self.salary_components.filter_by(name=name).first()
+        try:
+            return self.salary_components.filter_by(name=name).first()
+        except Exception:
+            # Table doesn't exist - return None
+            return None
 
 class SalaryComponent(db.Model):
     __tablename__ = 'salary_components'
