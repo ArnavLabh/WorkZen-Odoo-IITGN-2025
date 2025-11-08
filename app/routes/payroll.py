@@ -216,6 +216,162 @@ def mark_paid(payroll_id):
     flash('Payslip marked as paid successfully!', 'success')
     return redirect(url_for('payroll.view', payroll_id=payroll.id))
 
+@bp.route('/<int:payroll_id>/download-pdf')
+@login_required
+@employee_or_above_required
+def download_pdf(payroll_id):
+    """Download payslip as PDF"""
+    payroll = Payroll.query.get_or_404(payroll_id)
+    
+    # Employees can only download their own payslips
+    # HR Officer cannot access payroll
+    if current_user.role == 'Employee' and payroll.user_id != current_user.id:
+        abort(403)
+    
+    if current_user.role == 'HR Officer':
+        abort(403)
+    
+    from app.models import CompanySettings
+    from flask import make_response
+    import io
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    from reportlab.lib.enums import TA_CENTER
+    
+    # Create PDF in memory
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    
+    # Get company name
+    company_name = CompanySettings.get_setting('company_name', 'WorkZen')
+    
+    # Styles
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        spaceAfter=30,
+        alignment=TA_CENTER,
+        textColor=colors.HexColor('#0891b2')
+    )
+    
+    # Build PDF content
+    story = []
+    
+    # Company Header
+    story.append(Paragraph(f"<b>{company_name}</b>", title_style))
+    story.append(Paragraph("Payslip", styles['Heading2']))
+    story.append(Spacer(1, 20))
+    
+    # Employee Info
+    employee_data = [
+        ['Employee Name:', payroll.user.name],
+        ['Employee ID:', payroll.user.employee_id],
+        ['Department:', payroll.user.department or 'N/A'],
+        ['Pay Period:', f"{payroll.month:02d}/{payroll.year}"],
+        ['Generated On:', payroll.generated_at.strftime('%d %B %Y')]
+    ]
+    
+    employee_table = Table(employee_data, colWidths=[2*inch, 3*inch])
+    employee_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    
+    story.append(employee_table)
+    story.append(Spacer(1, 20))
+    
+    # Earnings
+    story.append(Paragraph("<b>Earnings</b>", styles['Heading3']))
+    earnings_data = [
+        ['Description', 'Amount (₹)'],
+        ['Basic Salary', f"{payroll.basic_salary:,.2f}"],
+        ['HRA', f"{payroll.hra:,.2f}"],
+        ['Conveyance', f"{payroll.conveyance:,.2f}"],
+        ['Other Allowances', f"{payroll.other_allowances:,.2f}"],
+        ['', ''],
+        ['Gross Salary', f"{payroll.gross_salary:,.2f}"]
+    ]
+    
+    earnings_table = Table(earnings_data, colWidths=[3*inch, 2*inch])
+    earnings_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -2), 1, colors.black),
+        ('LINEBELOW', (0, -1), (-1, -1), 2, colors.black),
+    ]))
+    
+    story.append(earnings_table)
+    story.append(Spacer(1, 20))
+    
+    # Deductions
+    story.append(Paragraph("<b>Deductions</b>", styles['Heading3']))
+    deductions_data = [
+        ['Description', 'Amount (₹)'],
+        ['PF Contribution', f"{payroll.pf_contribution:,.2f}"],
+        ['Professional Tax', f"{payroll.professional_tax:,.2f}"],
+        ['Other Deductions', f"{payroll.other_deductions:,.2f}"],
+        ['', ''],
+        ['Total Deductions', f"{payroll.total_deductions:,.2f}"]
+    ]
+    
+    deductions_table = Table(deductions_data, colWidths=[3*inch, 2*inch])
+    deductions_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8fafc')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID', (0, 0), (-1, -2), 1, colors.black),
+        ('LINEBELOW', (0, -1), (-1, -1), 2, colors.black),
+    ]))
+    
+    story.append(deductions_table)
+    story.append(Spacer(1, 20))
+    
+    # Net Salary
+    net_salary_data = [['Net Salary', f"₹{payroll.net_salary:,.2f}"]]
+    net_salary_table = Table(net_salary_data, colWidths=[3*inch, 2*inch])
+    net_salary_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#0891b2')),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 14),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ('TOPPADDING', (0, 0), (-1, -1), 10),
+    ]))
+    
+    story.append(net_salary_table)
+    
+    # Build PDF
+    doc.build(story)
+    
+    # Return PDF
+    buffer.seek(0)
+    response = make_response(buffer.getvalue())
+    buffer.close()
+    
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=payslip_{payroll.user.employee_id}_{payroll.month:02d}_{payroll.year}.pdf'
+    
+    return response
+
 @bp.route('/<int:payroll_id>/edit', methods=['GET', 'POST'])
 @login_required
 @role_required(['Admin', 'Payroll Officer'])

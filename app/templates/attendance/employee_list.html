@@ -159,8 +159,22 @@
 
 <script>
 function viewLogs(attendanceId, date) {
-    // Show logs in the logs container
+    // Update modal title
     document.getElementById('modal-date').textContent = date;
+    
+    // Show loading in modal
+    document.getElementById('modal-logs-content').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-2">Loading logs...</p>
+        </div>
+    `;
+    
+    // Show modal immediately
+    const modal = new bootstrap.Modal(document.getElementById('logsModal'));
+    modal.show();
     
     // Fetch logs via AJAX
     fetch(`/attendance/logs/${attendanceId}`)
@@ -208,21 +222,21 @@ function viewLogs(attendanceId, date) {
                     <strong><i class="fas fa-clock"></i> Total Working Hours:</strong> ${data.total_hours} hours
                 </div>`;
             } else {
-                html = '<p class="text-muted text-center">No logs found for this date.</p>';
+                html = '<p class="text-muted text-center py-4">No logs found for this date.</p>';
             }
             
-            // Update both modal and main container
+            // Update modal content only (not the main container)
             document.getElementById('modal-logs-content').innerHTML = html;
-            document.getElementById('logs-container').innerHTML = html;
-            
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('logsModal'));
-            modal.show();
         })
         .catch(error => {
             console.error('Error fetching logs:', error);
+            // Only update modal content on error, not the main container
             document.getElementById('modal-logs-content').innerHTML = 
                 '<p class="text-danger text-center">Error loading logs. Please try again.</p>';
+            
+            // Show modal with error
+            const modal = new bootstrap.Modal(document.getElementById('logsModal'));
+            modal.show();
         });
 }
 </script>
