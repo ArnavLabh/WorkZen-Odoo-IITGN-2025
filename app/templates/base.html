@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ g.locale or 'en' }}">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,13 +30,6 @@
             </a>
         </div>
         <div class="header-right">
-            <!-- Language Selector -->
-            <div class="language-selector">
-                <button class="lang-btn {% if g.locale == 'en' %}active{% endif %}" onclick="setLanguage('en')">EN</button>
-                <button class="lang-btn {% if g.locale == 'hi' %}active{% endif %}" onclick="setLanguage('hi')">HI</button>
-                <button class="lang-btn {% if g.locale == 'gu' %}active{% endif %}" onclick="setLanguage('gu')">GU</button>
-            </div>
-            
             <!-- Theme Toggle -->
             <button id="theme-toggle" class="theme-toggle">
                 <i class="fas fa-moon" id="theme-icon"></i>
@@ -72,7 +65,7 @@
                 <li class="sidebar-item">
                     <a href="{{ url_for('dashboard.dashboard') }}" class="sidebar-link {% if request.endpoint == 'dashboard.dashboard' %}active{% endif %}">
                         <i class="fas fa-home"></i>
-                        <span>{{ _('Home') }}</span>
+                        <span>Home</span>
                     </a>
                 </li>
                 
@@ -80,14 +73,14 @@
                 <li class="sidebar-item">
                     <a href="{{ url_for('employees.list') }}" class="sidebar-link {% if request.endpoint.startswith('employees') %}active{% endif %}">
                         <i class="fas fa-users"></i>
-                        <span>{{ _('Employees') }}</span>
+                        <span>Employees</span>
                     </a>
                 </li>
                 {% elif current_user.role == 'Employee' %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('employees.directory') }}" class="sidebar-link {% if request.endpoint == 'employees.directory' %}active{% endif %}">
                         <i class="fas fa-address-book"></i>
-                        <span>{{ _('Employee Directory') }}</span>
+                        <span>Employee Directory</span>
                     </a>
                 </li>
                 {% endif %}
@@ -95,14 +88,14 @@
                 <li class="sidebar-item">
                     <a href="{{ url_for('attendance.list') }}" class="sidebar-link {% if request.endpoint.startswith('attendance') %}active{% endif %}">
                         <i class="fas fa-calendar-check"></i>
-                        <span>{{ _('Attendance') }}</span>
+                        <span>Attendance</span>
                     </a>
                 </li>
                 
                 <li class="sidebar-item">
                     <a href="{{ url_for('leave.list') }}" class="sidebar-link {% if request.endpoint.startswith('leave') %}active{% endif %}">
                         <i class="fas fa-calendar-times"></i>
-                        <span>{{ _('Time Off') }}</span>
+                        <span>Time Off</span>
                     </a>
                 </li>
                 
@@ -110,32 +103,35 @@
                 <li class="sidebar-item">
                     <a href="{{ url_for('payroll.list') }}" class="sidebar-link {% if request.endpoint.startswith('payroll') %}active{% endif %}">
                         <i class="fas fa-money-bill-wave"></i>
-                        <span>{{ _('Payroll') }}</span>
+                        <span>Payroll</span>
                     </a>
                 </li>
                 {% elif current_user.role == 'Employee' %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('payroll.my_payslips') }}" class="sidebar-link {% if request.endpoint.startswith('payroll') %}active{% endif %}">
                         <i class="fas fa-file-invoice-dollar"></i>
-                        <span>{{ _('Payslip') }}</span>
+                        <span>Payslip</span>
                     </a>
                 </li>
                 {% endif %}
                 
-                
+                {% if current_user.role != 'Employee' %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('reports.generate') }}" class="sidebar-link {% if request.endpoint.startswith('reports') %}active{% endif %}">
                         <i class="fas fa-chart-bar"></i>
-                        <span>{{ _('Reports') }}</span>
+                        <span>Reports</span>
                     </a>
                 </li>
+                {% endif %}
                 
+                {% if current_user.role in ['Admin', 'Employee'] %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('settings.profile') }}" class="sidebar-link {% if request.endpoint.startswith('settings') %}active{% endif %}">
                         <i class="fas fa-cog"></i>
-                        <span>{{ _('Settings') }}</span>
+                        <span>Settings</span>
                     </a>
                 </li>
+                {% endif %}
             </ul>
         </aside>
         
@@ -174,18 +170,6 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     
     <script>
-        function setLanguage(lang) {
-            fetch('/set_language', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ language: lang })
-            }).then(() => {
-                window.location.reload();
-            });
-        }
-        
         // Update theme icon based on current theme
         document.addEventListener('DOMContentLoaded', function() {
             const theme = document.documentElement.getAttribute('data-theme');

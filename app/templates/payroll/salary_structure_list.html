@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Structure - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-cog"></i> Salary Structure Management
+        </h1>
+        <a href="{{ url_for('payroll.list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Payroll
+        </a>
+    </div>
+    
+    <div class="table-container">
+        <table class="table" id="data-table">
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Basic Salary</th>
+                    <th>HRA %</th>
+                    <th>Conveyance</th>
+                    <th>PF %</th>
+                    <th>Professional Tax</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                {% set settings = employee_settings[employee.id] if employee.id in employee_settings else None %}
+                <tr>
+                    <td>{{ employee.employee_id }}</td>
+                    <td>{{ employee.name }}</td>
+                    <td>{{ employee.email }}</td>
+                    <td>
+                        {% if settings and settings.basic_salary > 0 %}
+                            ₹{{ "%.2f"|format(settings.basic_salary) }}
+                        {% else %}
+                            <span class="text-muted">Not Set</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if settings %}
+                            {{ "%.1f"|format(settings.hra_percentage) }}%
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if settings %}
+                            ₹{{ "%.2f"|format(settings.conveyance) }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if settings %}
+                            {{ "%.1f"|format(settings.pf_percentage) }}%
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if settings %}
+                            ₹{{ "%.2f"|format(settings.professional_tax_amount) }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if settings and settings.basic_salary > 0 %}
+                            <span class="badge badge-success">Configured</span>
+                        {% else %}
+                            <span class="badge badge-warning">Not Set</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('payroll.salary_structure', user_id=employee.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-edit"></i> {% if settings and settings.basic_salary > 0 %}Edit{% else %}Set{% endif %}
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" class="text-center">No employees found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -10,9 +10,15 @@ bp = Blueprint('employees', __name__)
 
 @bp.route('/')
 @login_required
-@employee_or_above_required
 def list():
-    # Admin and HR Officer can see full list with actions
+    # Only Admin and HR Officer can see full list with actions
+    # Payroll Officer cannot access employee management
+    if current_user.role not in ['Admin', 'HR Officer']:
+        if current_user.role == 'Employee':
+            return redirect(url_for('employees.directory'))
+        flash('You do not have permission to access employee management', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
+    
     if current_user.role in ['Admin', 'HR Officer']:
         search = request.args.get('search', '').strip()
         query = User.query.filter(User.role == 'Employee')

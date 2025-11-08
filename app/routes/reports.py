@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash
+from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from app import db
 from app.models import Attendance, Leave, Payroll, User
@@ -10,14 +10,20 @@ bp = Blueprint('reports', __name__)
 
 @bp.route('/')
 @login_required
-@employee_or_above_required
 def generate():
+    # Employees cannot access reports
+    if current_user.role == 'Employee':
+        flash('You do not have permission to access reports', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
     return render_template('reports/generate.html')
 
 @bp.route('/attendance')
 @login_required
-@employee_or_above_required
 def attendance():
+    # Employees cannot access reports - they can only view their own data via attendance list
+    if current_user.role == 'Employee':
+        flash('You do not have permission to access reports', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     user_id = request.args.get('user_id', '')
@@ -56,7 +62,7 @@ def attendance():
     
     # Get users for filter
     users = []
-    if current_user.role in ['Admin', 'HR Officer']:
+    if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer']:
         users = User.query.filter_by(role='Employee').order_by(User.name).all()
     
     return render_template('reports/attendance_report.html',
@@ -73,8 +79,11 @@ def attendance():
 
 @bp.route('/leave')
 @login_required
-@employee_or_above_required
 def leave():
+    # Employees cannot access reports - they can only view their own leaves via leave list
+    if current_user.role == 'Employee':
+        flash('You do not have permission to access reports', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     user_id = request.args.get('user_id', '')
@@ -118,7 +127,7 @@ def leave():
     
     # Get users for filter
     users = []
-    if current_user.role in ['Admin', 'HR Officer']:
+    if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer']:
         users = User.query.filter_by(role='Employee').order_by(User.name).all()
     
     return render_template('reports/leave_report.html',

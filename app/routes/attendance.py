@@ -42,9 +42,9 @@ def list():
     
     attendances = query.order_by(Attendance.date.desc(), Attendance.user_id).limit(100).all()
     
-    # Get all users for filter (Admin/HR only)
+    # Get all users for filter (Admin/HR/Payroll can view all)
     users = []
-    if current_user.role in ['Admin', 'HR Officer']:
+    if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer']:
         users = User.query.filter_by(role='Employee').order_by(User.name).all()
     
     return render_template('attendance/list.html', 
@@ -126,7 +126,7 @@ def mark():
     except ValueError:
         existing = None
     
-    # Get users for dropdown (Admin/HR only)
+    # Get users for dropdown (Admin/HR can mark, Payroll can view)
     users = []
     if current_user.role in ['Admin', 'HR Officer']:
         users = User.query.filter_by(role='Employee').order_by(User.name).all()

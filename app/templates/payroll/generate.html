@@ -13,6 +13,27 @@
         </a>
     </div>
     
+    {% if employees_without_salary %}
+    <div class="alert alert-warning">
+        <h4><i class="fas fa-exclamation-triangle"></i> Employees Without Salary Structure</h4>
+        <p>The following employees need salary structure to be set before generating payroll:</p>
+        <ul class="mb-0">
+            {% for emp in employees_without_salary %}
+            <li>
+                <strong>{{ emp.name }}</strong> ({{ emp.employee_id }})
+                <a href="{{ url_for('payroll.salary_structure', user_id=emp.id) }}" class="btn btn-sm btn-primary ml-2">
+                    <i class="fas fa-cog"></i> Set Salary Structure
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+        <hr>
+        <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-secondary">
+            <i class="fas fa-list"></i> Manage All Salary Structures
+        </a>
+    </div>
+    {% endif %}
+    
     <form method="POST" action="{{ url_for('payroll.generate') }}">
         <div class="form-group">
             <label class="form-label" for="user_id">
@@ -21,9 +42,17 @@
             <select class="form-control" id="user_id" name="user_id" required>
                 <option value="">Select Employee</option>
                 {% for employee in employees %}
+                {% set emp_settings = employee_settings_map.get(employee.id) %}
+                {% if not emp_settings or emp_settings.basic_salary == 0 %}
+                <option value="{{ employee.id }}" disabled title="Salary structure not set">
+                    {{ employee.name }} ({{ employee.employee_id }}) - Salary structure required
+                </option>
+                {% else %}
                 <option value="{{ employee.id }}">{{ employee.name }} ({{ employee.employee_id }})</option>
+                {% endif %}
                 {% endfor %}
             </select>
+            <small class="form-text text-muted">Only employees with salary structure set are available for payroll generation.</small>
         </div>
         
         <div class="row">

@@ -10,8 +10,11 @@ bp = Blueprint('settings', __name__)
 
 @bp.route('/profile', methods=['GET', 'POST'])
 @login_required
-@employee_or_above_required
 def profile():
+    # Only Admin and Employees can access settings (for their own profile)
+    if current_user.role not in ['Admin', 'Employee']:
+        flash('You do not have permission to access settings', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
     user = current_user
     
     if request.method == 'POST':
@@ -51,8 +54,11 @@ def profile():
 
 @bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
-@employee_or_above_required
 def change_password():
+    # Only Admin and Employees can access settings (for their own profile)
+    if current_user.role not in ['Admin', 'Employee']:
+        flash('You do not have permission to access settings', 'danger')
+        return redirect(url_for('dashboard.dashboard'))
     if request.method == 'POST':
         current_password = request.form.get('current_password', '')
         new_password = request.form.get('new_password', '')

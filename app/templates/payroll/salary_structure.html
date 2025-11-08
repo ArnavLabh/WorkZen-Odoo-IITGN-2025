@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Structure - {{ user.name }} - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-cog"></i> Salary Structure - {{ user.name }}
+        </h1>
+        <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Set the salary structure for <strong>{{ user.name }}</strong> ({{ user.employee_id }}). 
+        This information will be used to generate payroll.
+    </div>
+    
+    <form method="POST" action="{{ url_for('payroll.salary_structure', user_id=user.id) }}">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label" for="basic_salary">
+                        <i class="fas fa-rupee-sign"></i> Basic Salary *
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="basic_salary" 
+                           name="basic_salary" 
+                           step="0.01" 
+                           min="0" 
+                           value="{{ settings.basic_salary if settings else '0' }}" 
+                           required>
+                    <small class="form-text text-muted">Monthly basic salary amount</small>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label" for="hra_percentage">
+                        <i class="fas fa-percentage"></i> HRA Percentage *
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="hra_percentage" 
+                           name="hra_percentage" 
+                           step="0.1" 
+                           min="0" 
+                           max="100" 
+                           value="{{ settings.hra_percentage if settings else '0' }}" 
+                           required>
+                    <small class="form-text text-muted">House Rent Allowance percentage (0-100%)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label" for="conveyance">
+                        <i class="fas fa-car"></i> Conveyance Allowance
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="conveyance" 
+                           name="conveyance" 
+                           step="0.01" 
+                           min="0" 
+                           value="{{ settings.conveyance if settings else '0' }}" 
+                           required>
+                    <small class="form-text text-muted">Monthly conveyance allowance</small>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label" for="other_allowances">
+                        <i class="fas fa-plus-circle"></i> Other Allowances
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="other_allowances" 
+                           name="other_allowances" 
+                           step="0.01" 
+                           min="0" 
+                           value="{{ settings.other_allowances if settings else '0' }}" 
+                           required>
+                    <small class="form-text text-muted">Additional monthly allowances</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label" for="pf_percentage">
+                        <i class="fas fa-percent"></i> PF Percentage *
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="pf_percentage" 
+                           name="pf_percentage" 
+                           step="0.1" 
+                           min="0" 
+                           max="100" 
+                           value="{{ settings.pf_percentage if settings else '12' }}" 
+                           required>
+                    <small class="form-text text-muted">Provident Fund percentage (default: 12%)</small>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label" for="professional_tax_amount">
+                        <i class="fas fa-file-invoice-dollar"></i> Professional Tax
+                    </label>
+                    <input type="number" 
+                           class="form-control" 
+                           id="professional_tax_amount" 
+                           name="professional_tax_amount" 
+                           step="0.01" 
+                           min="0" 
+                           value="{{ settings.professional_tax_amount if settings else '200' }}" 
+                           required>
+                    <small class="form-text text-muted">Monthly professional tax amount (default: ₹200)</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-success">
+            <h5><i class="fas fa-calculator"></i> Salary Calculation Preview</h5>
+            <p class="mb-1"><strong>Gross Salary</strong> = Basic Salary + HRA + Conveyance + Other Allowances</p>
+            <p class="mb-1"><strong>PF Contribution</strong> = Basic Salary × PF%</p>
+            <p class="mb-0"><strong>Net Salary</strong> = Gross Salary - PF - Professional Tax - Other Deductions</p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Salary Structure
+            </button>
+            <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

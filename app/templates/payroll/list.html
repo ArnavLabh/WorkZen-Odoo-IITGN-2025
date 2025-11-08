@@ -8,9 +8,14 @@
         <h1 class="card-title">
             <i class="fas fa-money-bill-wave"></i> Payroll
         </h1>
-        <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Generate Payroll
-        </a>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-secondary">
+                <i class="fas fa-cog"></i> Manage Salary Structure
+            </a>
+            <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Generate Payroll
+            </a>
+        </div>
     </div>
     
     <div class="search-filter-bar">

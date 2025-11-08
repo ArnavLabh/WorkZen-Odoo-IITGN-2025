@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}WorkZen - Smart Human Resource Management System{% endblock %}
+
+{% block content %}
+<div class="hero-section" style="min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-align: center; padding: 2rem;">
+    <div class="hero-content" style="max-width: 900px; margin: 0 auto;">
+        <div class="hero-logo" style="font-size: 4rem; margin-bottom: 1rem;">
+            <i class="fas fa-briefcase"></i>
+        </div>
+        <h1 class="hero-title" style="font-size: 3.5rem; font-weight: 700; margin-bottom: 1.5rem; line-height: 1.2;">
+            WorkZen
+        </h1>
+        <p class="hero-subtitle" style="font-size: 1.5rem; margin-bottom: 2rem; opacity: 0.95; line-height: 1.6;">
+            Smart Human Resource Management System
+        </p>
+        <p class="hero-description" style="font-size: 1.1rem; margin-bottom: 3rem; opacity: 0.9; line-height: 1.8;">
+            Streamline your HR operations with our comprehensive management system. 
+            Manage employees, track attendance, handle leaves, process payroll, and generate reports all in one place.
+        </p>
+        
+        <div class="hero-features" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 3rem; text-align: left;">
+            <div class="feature-card" style="background: rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 10px; backdrop-filter: blur(10px);">
+                <div class="feature-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Employee Management</h3>
+                <p style="opacity: 0.9; line-height: 1.6;">Create and manage employee profiles with ease. Track employee information and maintain detailed records.</p>
+            </div>
+            
+            <div class="feature-card" style="background: rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 10px; backdrop-filter: blur(10px);">
+                <div class="feature-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Attendance Tracking</h3>
+                <p style="opacity: 0.9; line-height: 1.6;">Monitor daily attendance with check-in/check-out functionality. Track working hours and attendance patterns.</p>
+            </div>
+            
+            <div class="feature-card" style="background: rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 10px; backdrop-filter: blur(10px);">
+                <div class="feature-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-calendar-times"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Leave Management</h3>
+                <p style="opacity: 0.9; line-height: 1.6;">Handle leave applications, approvals, and tracking. Efficiently manage employee time-off requests.</p>
+            </div>
+            
+            <div class="feature-card" style="background: rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 10px; backdrop-filter: blur(10px);">
+                <div class="feature-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-money-bill-wave"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Payroll Processing</h3>
+                <p style="opacity: 0.9; line-height: 1.6;">Generate payroll, calculate salaries with deductions, and create payslips automatically.</p>
+            </div>
+            
+            <div class="feature-card" style="background: rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 10px; backdrop-filter: blur(10px);">
+                <div class="feature-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Reports & Analytics</h3>
+                <p style="opacity: 0.9; line-height: 1.6;">Generate comprehensive reports for attendance, leaves, and payroll. Make data-driven decisions.</p>
+            </div>
+            
+            <div class="feature-card" style="background: rgba(255, 255, 255, 0.1); padding: 1.5rem; border-radius: 10px; backdrop-filter: blur(10px);">
+                <div class="feature-icon" style="font-size: 2.5rem; margin-bottom: 1rem;">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 style="font-size: 1.3rem; margin-bottom: 0.5rem;">Role-Based Access</h3>
+                <p style="opacity: 0.9; line-height: 1.6;">Secure access control with role-based permissions for Admin, HR, Payroll, and Employees.</p>
+            </div>
+        </div>
+        
+        <div class="hero-actions" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('auth.login') }}" class="btn" style="background: white; color: #667eea; padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600; border-radius: 50px; text-decoration: none; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);">
+                <i class="fas fa-sign-in-alt"></i> Login
+            </a>
+            <a href="{{ url_for('auth.register') }}" class="btn" style="background: rgba(255, 255, 255, 0.2); color: white; padding: 1rem 2.5rem; font-size: 1.1rem; font-weight: 600; border-radius: 50px; text-decoration: none; border: 2px solid white; transition: transform 0.3s, background 0.3s; backdrop-filter: blur(10px);">
+                <i class="fas fa-user-plus"></i> Register as Admin/HR
+            </a>
+        </div>
+        
+        <div class="hero-footer" style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.2); opacity: 0.8;">
+            <p style="font-size: 0.9rem;">
+                Built with <i class="fas fa-heart" style="color: #ff6b6b;"></i> using Flask, PostgreSQL, and modern web technologies
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+.hero-section .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.hero-section .btn:last-child:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.feature-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.2rem !important;
+    }
+    
+    .hero-features {
+        grid-template-columns: 1fr !important;
+    }
+}
+</style>
+{% endblock %}
+

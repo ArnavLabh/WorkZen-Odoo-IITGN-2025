@@ -44,15 +44,6 @@ class Config:
         }
     }
     
-    # Flask-Babel configuration
-    LANGUAGES = {
-        'en': 'English',
-        'hi': 'Hindi',
-        'gu': 'Gujarati'
-    }
-    BABEL_DEFAULT_LOCALE = 'en'
-    BABEL_DEFAULT_TIMEZONE = 'UTC'
-    
     # Google OAuth configuration
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID') or '526764377709-eumd84rde6job3qrr73otr1outhpfbol.apps.googleusercontent.com'
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET') or ''

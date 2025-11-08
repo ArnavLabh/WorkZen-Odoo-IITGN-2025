@@ -90,8 +90,8 @@ def apply():
 @bp.route('/<int:leave_id>/approve', methods=['POST'])
 @login_required
 def approve(leave_id):
-    from app.utils.decorators import hr_required, payroll_required
-    if current_user.role not in ['Admin', 'HR Officer', 'Payroll Officer']:
+    # Payroll Officer and Admin can approve leaves (HR can allocate but Payroll approves)
+    if current_user.role not in ['Admin', 'Payroll Officer']:
         flash('You do not have permission to approve leaves', 'danger')
         return redirect(url_for('leave.list'))
     leave = Leave.query.get_or_404(leave_id)
@@ -111,7 +111,8 @@ def approve(leave_id):
 @bp.route('/<int:leave_id>/reject', methods=['POST'])
 @login_required
 def reject(leave_id):
-    if current_user.role not in ['Admin', 'HR Officer', 'Payroll Officer']:
+    # Payroll Officer and Admin can reject leaves
+    if current_user.role not in ['Admin', 'Payroll Officer']:
         flash('You do not have permission to reject leaves', 'danger')
         return redirect(url_for('leave.list'))
     leave = Leave.query.get_or_404(leave_id)
