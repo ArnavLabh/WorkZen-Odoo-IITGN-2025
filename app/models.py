@@ -20,7 +20,7 @@ class User(UserMixin, db.Model):
     
     # Relationships
     attendances = db.relationship('Attendance', backref='user', lazy='dynamic', cascade='all, delete-orphan')
-    leaves = db.relationship('Leave', backref='user', lazy='dynamic', cascade='all, delete-orphan')
+    leaves = db.relationship('Leave', foreign_keys='Leave.user_id', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     payrolls = db.relationship('Payroll', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     payroll_settings = db.relationship('PayrollSettings', backref='user', uselist=False, cascade='all, delete-orphan')
     approved_leaves = db.relationship('Leave', foreign_keys='Leave.approved_by', backref='approver', lazy='dynamic')

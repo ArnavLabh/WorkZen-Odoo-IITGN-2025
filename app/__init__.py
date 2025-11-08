@@ -37,13 +37,13 @@ def create_app(config_class=Config):
     login_manager.login_message_category = 'info'
     
     # Babel locale selector
-    @babel.localeselector
-    def get_locale():
-        if 'locale' in session:
-            return session['locale']
-        return request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or app.config['BABEL_DEFAULT_LOCALE']
+    # @Babel.localeselector
+    # def get_locale():
+    #     if 'locale' in session:
+    #         return session['locale']
+    #     return request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or app.config['BABEL_DEFAULT_LOCALE']
     
-    babel.init_app(app)
+    # babel.init_app(app)
     
     # Store locale in g for templates
     # @app.before_request

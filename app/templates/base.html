@@ -149,23 +149,24 @@
                     {% endfor %}
                 {% endif %}
             {% endwith %}
-            
-            {% block content %}{% endblock %}
+    {% endif %}
+    
+    {% if not current_user.is_authenticated %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; max-width: 500px;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% endif %}
+    
+    {% block content %}{% endblock %}
+    
+    {% if current_user.is_authenticated %}
         </main>
-    </div>
-    {% else %}
-    <div class="auth-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        {% block content %}{% endblock %}
     </div>
     {% endif %}
     
