@@ -92,6 +92,41 @@ class PayrollSettings(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Valid column names - used to filter out invalid attributes
+    _valid_columns = {
+        'id', 'user_id', 'basic_salary', 'hra_percentage', 'conveyance', 
+        'other_allowances', 'pf_percentage', 'professional_tax_amount',
+        'created_at', 'updated_at'
+    }
+    
+    def __init__(self, **kwargs):
+        # Only allow valid model columns to be set
+        # This prevents SQLAlchemy from trying to insert columns that don't exist in the database
+        filtered_kwargs = {k: v for k, v in kwargs.items() if k in self._valid_columns}
+        super(PayrollSettings, self).__init__(**filtered_kwargs)
+    
+    def __setattr__(self, name, value):
+        # Prevent setting invalid attributes that don't exist in the database
+        # This is critical to prevent SQLAlchemy from trying to insert non-existent columns
+        if name.startswith('_'):
+            # Allow private attributes (SQLAlchemy internals, etc.)
+            super(PayrollSettings, self).__setattr__(name, value)
+        elif name in self._valid_columns:
+            # Allow valid model columns
+            super(PayrollSettings, self).__setattr__(name, value)
+        elif name in ['wage', 'wage_type']:
+            # CRITICAL: Silently ignore attempts to set these invalid attributes
+            # They don't exist in the database schema, so we must not store them
+            # SQLAlchemy will try to insert them if they're set, causing the error
+            # We return without setting to prevent the attribute from being stored
+            return
+        else:
+            # For SQLAlchemy's internal attributes, allow them
+            # But don't set arbitrary user attributes that might confuse SQLAlchemy
+            if name.startswith('_sa_') or hasattr(self.__class__, name):
+                super(PayrollSettings, self).__setattr__(name, value)
+            # Otherwise, ignore unknown attributes to prevent SQLAlchemy errors
+    
     def __repr__(self):
         return f'<PayrollSettings {self.user_id}>'
 

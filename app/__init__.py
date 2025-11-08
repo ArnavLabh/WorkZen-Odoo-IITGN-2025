@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from config import Config
+from sqlalchemy import event
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -16,6 +17,30 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+    
+    # Register event listeners to clean up invalid attributes before insert/update
+    from app.models import PayrollSettings
+    from sqlalchemy.orm import Session
+    
+    @event.listens_for(Session, 'before_flush', propagate=True)
+    def receive_before_flush(session, flush_context, instances):
+        """Remove invalid attributes from PayrollSettings objects before flush"""
+        for obj in session.new.union(session.dirty):
+            if isinstance(obj, PayrollSettings):
+                invalid_attrs = ['wage', 'wage_type']
+                for attr in invalid_attrs:
+                    if hasattr(obj, attr):
+                        try:
+                            # Remove from object's __dict__ directly
+                            if attr in obj.__dict__:
+                                del obj.__dict__[attr]
+                            # Also try to remove via delattr
+                            try:
+                                delattr(obj, attr)
+                            except:
+                                pass
+                        except (AttributeError, TypeError, KeyError):
+                            pass
     
     # For serverless environments, we don't test the connection on startup
     # Connections will be established lazily on first request
