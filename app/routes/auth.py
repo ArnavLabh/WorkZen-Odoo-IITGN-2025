@@ -6,6 +6,7 @@ from app.utils.validators import validate_email, validate_password
 from config import Config
 import requests
 from datetime import datetime
+from sqlalchemy import or_
 
 bp = Blueprint('auth', __name__)
 
@@ -78,14 +79,20 @@ def login():
         return redirect(url_for('dashboard.dashboard'))
     
     if request.method == 'POST':
-        email = request.form.get('email', '').strip()
+        login_id = request.form.get('email', '').strip()  # Can be email or employee_id
         password = request.form.get('password', '')
         
-        if not email or not password:
-            flash('Please enter both email and password', 'danger')
+        if not login_id or not password:
+            flash('Please enter both login ID/email and password', 'danger')
             return render_template('auth/login.html')
         
-        user = User.query.filter_by(email=email).first()
+        # Try to find user by email or employee_id
+        user = User.query.filter(
+            or_(
+                User.email == login_id,
+                User.employee_id == login_id
+            )
+        ).first()
         
         if user and user.check_password(password):
             login_user(user)
@@ -95,7 +102,7 @@ def login():
             flash(f'Welcome back, {user.name}!', 'success')
             return redirect(next_page)
         else:
-            flash('Invalid email or password', 'danger')
+            flash('Invalid login ID/email or password', 'danger')
     
     return render_template('auth/login.html')
 

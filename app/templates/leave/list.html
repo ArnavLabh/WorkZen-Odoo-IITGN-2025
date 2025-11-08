@@ -8,11 +8,6 @@
         <h1 class="card-title">
             <i class="fas fa-calendar-times"></i> Time Off
         </h1>
-        {% if current_user.role == 'Employee' %}
-        <a href="{{ url_for('leave.apply') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> New Time Off
-        </a>
-        {% endif %}
     </div>
     
     <div class="search-filter-bar">

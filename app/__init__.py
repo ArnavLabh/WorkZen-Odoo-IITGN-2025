@@ -62,6 +62,37 @@ def create_app(config_class=Config):
     from app.routes.settings import bp as settings_bp
     app.register_blueprint(settings_bp, url_prefix='/settings')
     
+    # Context processor for attendance status
+    @app.context_processor
+    def inject_attendance_status():
+        from flask_login import current_user
+        from datetime import date
+        from app.models import Attendance
+        
+        if current_user.is_authenticated:
+            today = date.today()
+            today_attendance = Attendance.query.filter_by(
+                user_id=current_user.id,
+                date=today
+            ).first()
+            
+            is_checked_in = today_attendance and today_attendance.check_in is not None
+            is_checked_out = today_attendance and today_attendance.check_out is not None
+            check_in_time = today_attendance.check_in if today_attendance and today_attendance.check_in else None
+            
+            return {
+                'is_checked_in': is_checked_in,
+                'is_checked_out': is_checked_out,
+                'check_in_time': check_in_time,
+                'today_attendance': today_attendance
+            }
+        return {
+            'is_checked_in': False,
+            'is_checked_out': False,
+            'check_in_time': None,
+            'today_attendance': None
+        }
+    
     # Root route
     @app.route('/')
     def index():

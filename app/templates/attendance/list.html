@@ -8,11 +8,7 @@
         <h1 class="card-title">
             <i class="fas fa-calendar-check"></i> Attendance
         </h1>
-        {% if current_user.role == 'Employee' %}
-        <a href="{{ url_for('attendance.mark') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Mark Attendance
-        </a>
-        {% elif current_user.role in ['Admin', 'HR Officer'] %}
+        {% if current_user.role in ['Admin', 'HR Officer'] %}
         <a href="{{ url_for('attendance.mark') }}" class="btn btn-primary">
             <i class="fas fa-plus"></i> Mark Attendance
         </a>

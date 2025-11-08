@@ -150,7 +150,7 @@ def checkin():
     
     if existing and existing.check_in:
         flash('You have already checked in today', 'warning')
-        return redirect(url_for('attendance.list'))
+        return redirect(request.referrer or url_for('employees.directory'))
     
     check_in_time = datetime.now().time()
     
@@ -170,7 +170,7 @@ def checkin():
     
     db.session.commit()
     flash('Checked in successfully!', 'success')
-    return redirect(url_for('dashboard.dashboard'))
+    return redirect(request.referrer or url_for('employees.directory'))
 
 @bp.route('/checkout', methods=['POST'])
 @login_required
@@ -184,18 +184,18 @@ def checkout():
     
     if not attendance:
         flash('Please check in first', 'danger')
-        return redirect(url_for('attendance.list'))
+        return redirect(request.referrer or url_for('employees.directory'))
     
     if attendance.check_out:
         flash('You have already checked out today', 'warning')
-        return redirect(url_for('attendance.list'))
+        return redirect(request.referrer or url_for('employees.directory'))
     
     attendance.check_out = datetime.now().time()
     attendance.calculate_working_hours()
     db.session.commit()
     
     flash('Checked out successfully!', 'success')
-    return redirect(url_for('dashboard.dashboard'))
+    return redirect(request.referrer or url_for('employees.directory'))
 
 @bp.route('/<int:attendance_id>/edit', methods=['GET', 'POST'])
 @login_required

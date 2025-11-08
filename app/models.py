@@ -83,17 +83,63 @@ class PayrollSettings(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False, index=True)
-    basic_salary = db.Column(db.Numeric(10, 2), nullable=False)
+    # Legacy fields (kept for backward compatibility)
+    basic_salary = db.Column(db.Numeric(10, 2), default=0.0, nullable=True)
     hra_percentage = db.Column(db.Float, default=0.0)
     conveyance = db.Column(db.Numeric(10, 2), default=0.0)
     other_allowances = db.Column(db.Numeric(10, 2), default=0.0)
+    # New fields
+    wage = db.Column(db.Numeric(10, 2), default=0.0)  # Fixed wage amount
+    wage_type = db.Column(db.String(20), default='Fixed')  # Currently only 'Fixed' is supported
     pf_percentage = db.Column(db.Float, default=12.0)  # Default 12%
     professional_tax_amount = db.Column(db.Numeric(10, 2), default=200.0)  # Default 200
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationship
+    salary_components = db.relationship('SalaryComponent', backref='payroll_settings', lazy='dynamic', cascade='all, delete-orphan', order_by='SalaryComponent.display_order')
+    
     def __repr__(self):
         return f'<PayrollSettings {self.user_id}>'
+    
+    def get_component_by_name(self, name):
+        """Get a salary component by its name"""
+        return self.salary_components.filter_by(name=name).first()
+
+class SalaryComponent(db.Model):
+    __tablename__ = 'salary_components'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    payroll_settings_id = db.Column(db.Integer, db.ForeignKey('payroll_settings.id'), nullable=False, index=True)
+    name = db.Column(db.String(100), nullable=False)  # Basic, HRA, Standard Allowance, etc.
+    computation_type = db.Column(db.String(20), nullable=False)  # 'Fixed' or 'Percentage'
+    value = db.Column(db.Numeric(10, 4), nullable=False)  # Fixed amount or percentage value
+    base_for_percentage = db.Column(db.String(50), default='Wage')  # 'Wage' or 'Basic' - what the percentage is calculated from
+    display_order = db.Column(db.Integer, default=0)  # Order in which components are displayed
+    is_active = db.Column(db.Boolean, default=True)  # Whether this component is active
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    __table_args__ = (db.UniqueConstraint('payroll_settings_id', 'name', name='unique_settings_component'),)
+    
+    def __repr__(self):
+        return f'<SalaryComponent {self.name} - {self.computation_type}>'
+    
+    def calculate_amount(self, wage, basic_amount=None):
+        """Calculate the component amount based on wage and computation type"""
+        from decimal import Decimal
+        wage_decimal = Decimal(str(wage))
+        value_decimal = Decimal(str(self.value))
+        
+        if self.computation_type == 'Fixed':
+            return float(value_decimal)
+        elif self.computation_type == 'Percentage':
+            if self.base_for_percentage == 'Basic' and basic_amount:
+                base = Decimal(str(basic_amount))
+            else:
+                base = wage_decimal
+            return float(base * value_decimal / Decimal('100'))
+        return 0.0
 
 class Payroll(db.Model):
     __tablename__ = 'payrolls'

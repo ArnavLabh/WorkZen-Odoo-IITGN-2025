@@ -6,12 +6,30 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Theme toggle button
     const themeToggle = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    
+    function updateThemeUI(theme) {
+        if (themeIcon) {
+            themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        if (themeText) {
+            themeText.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        }
+    }
+    
     if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
+        // Update UI on page load
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        updateThemeUI(savedTheme);
+        
+        themeToggle.addEventListener('click', function(e) {
+            e.preventDefault();
             const currentTheme = document.documentElement.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
             document.documentElement.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
+            updateThemeUI(newTheme);
         });
     }
     

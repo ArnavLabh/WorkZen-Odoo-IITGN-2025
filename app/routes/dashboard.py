@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required, current_user
 from app.models import User, Attendance, Leave, Payroll
 from app.utils.decorators import employee_or_above_required
@@ -14,16 +14,17 @@ def dashboard():
     user = current_user
     role = user.role
     
-    if role == 'Admin':
+    # Employees should be redirected to employees directory page
+    if role == 'Employee':
+        return redirect(url_for('employees.directory'))
+    elif role == 'Admin':
         return admin_dashboard()
-    elif role == 'Employee':
-        return employee_dashboard()
     elif role == 'HR Officer':
         return hr_dashboard()
     elif role == 'Payroll Officer':
         return payroll_dashboard()
     else:
-        return employee_dashboard()
+        return redirect(url_for('employees.directory'))
 
 def admin_dashboard():
     # Statistics

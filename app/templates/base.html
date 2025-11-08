@@ -30,15 +30,48 @@
             </a>
         </div>
         <div class="header-right">
-            <!-- Theme Toggle -->
-            <button id="theme-toggle" class="theme-toggle">
-                <i class="fas fa-moon" id="theme-icon"></i>
-            </button>
+            <!-- Check In/Check Out Button -->
+            {% if current_user.role == 'Employee' %}
+            <div style="display: flex; align-items: center; gap: 1rem; margin-right: 1rem;">
+                {% if not is_checked_in %}
+                    <form method="POST" action="{{ url_for('attendance.checkin') }}" style="margin: 0;">
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-sign-in-alt"></i> Check IN
+                        </button>
+                    </form>
+                {% elif is_checked_in and not is_checked_out %}
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                            Since {{ check_in_time.strftime('%I:%M %p') if check_in_time else '' }}
+                        </span>
+                        <form method="POST" action="{{ url_for('attendance.checkout') }}" style="margin: 0;">
+                            <button type="submit" class="btn btn-warning btn-sm">
+                                <i class="fas fa-sign-out-alt"></i> Check Out
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                        <i class="fas fa-check-circle" style="color: var(--success-color);"></i> Checked Out
+                    </span>
+                {% endif %}
+            </div>
+            {% endif %}
             
             <!-- Profile Dropdown -->
             <div class="profile-dropdown">
                 <button id="profile-btn" class="profile-btn">
-                    <div class="avatar">{{ current_user.name[0].upper() }}</div>
+                    <div class="avatar" style="position: relative;">
+                        {{ current_user.name[0].upper() }}
+                        <!-- Status Dot -->
+                        {% if current_user.role == 'Employee' %}
+                            {% if is_checked_in %}
+                                <div style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background-color: #10b981; border: 2px solid var(--bg-primary); border-radius: 50%;"></div>
+                            {% else %}
+                                <div style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background-color: #ef4444; border: 2px solid var(--bg-primary); border-radius: 50%;"></div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
                     <span>{{ current_user.name }}</span>
                     <i class="fas fa-chevron-down"></i>
                 </button>
@@ -49,6 +82,9 @@
                     <a href="{{ url_for('settings.change_password') }}" class="dropdown-item">
                         <i class="fas fa-key"></i> Change Password
                     </a>
+                    <button id="theme-toggle" class="dropdown-item" style="width: 100%; text-align: left; border: none; background: none; cursor: pointer; padding: 0.75rem 1rem;">
+                        <i class="fas fa-moon" id="theme-icon"></i> <span id="theme-text">Dark Mode</span>
+                    </button>
                     <div class="dropdown-item" style="border-top: 1px solid var(--border-color); margin-top: 0.5rem; padding-top: 0.75rem;">
                         <a href="{{ url_for('auth.logout') }}" class="dropdown-item" style="padding: 0;">
                             <i class="fas fa-sign-out-alt"></i> Log Out
@@ -168,27 +204,6 @@
     
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    
-    <script>
-        // Update theme icon based on current theme
-        document.addEventListener('DOMContentLoaded', function() {
-            const theme = document.documentElement.getAttribute('data-theme');
-            const themeIcon = document.getElementById('theme-icon');
-            if (themeIcon) {
-                themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-            }
-            
-            const themeToggle = document.getElementById('theme-toggle');
-            if (themeToggle) {
-                themeToggle.addEventListener('click', function() {
-                    setTimeout(() => {
-                        const newTheme = document.documentElement.getAttribute('data-theme');
-                        themeIcon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-                    }, 100);
-                });
-            }
-        });
-    </script>
     
     {% block scripts %}{% endblock %}
 </body>
