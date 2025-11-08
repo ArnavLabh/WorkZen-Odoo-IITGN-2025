@@ -8,9 +8,27 @@
         <h1 class="card-title">
             <i class="fas fa-user"></i> Employee Profile
         </h1>
-        <a href="{{ url_for('employees.directory') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
+        <div style="display: flex; gap: 0.5rem;">
+            {% if can_edit %}
+            <a href="{{ url_for('employees.edit', user_id=user.id) }}" class="btn btn-primary">
+                <i class="fas fa-edit"></i> Edit Profile
+            </a>
+            {% endif %}
+            {% if can_edit_salary and user.role == 'Employee' %}
+            <a href="{{ url_for('payroll.salary_structure', user_id=user.id) }}" class="btn btn-primary">
+                <i class="fas fa-money-bill-wave"></i> Edit Salary Structure
+            </a>
+            {% endif %}
+            {% if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer'] %}
+            <a href="{{ url_for('employees.directory') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            {% else %}
+            <a href="{{ url_for('settings.profile') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            {% endif %}
+        </div>
     </div>
     
     <div class="row">

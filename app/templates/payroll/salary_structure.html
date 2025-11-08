@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Salary Structure - {{ user.name }} - WorkZen{% endblock %}
+{% block title %}Salary Information - {{ user.name }} - WorkZen{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header">
         <h1 class="card-title">
-            <i class="fas fa-cog"></i> Salary Structure - {{ user.name }}
+            <i class="fas fa-money-bill-wave"></i> Salary Information - {{ user.name }}
         </h1>
         <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back
@@ -14,126 +14,200 @@
     </div>
     
     <div class="alert alert-info">
-        <i class="fas fa-info-circle"></i> Set the salary structure for <strong>{{ user.name }}</strong> ({{ user.employee_id }}). 
-        This information will be used to generate payroll.
+        <i class="fas fa-info-circle"></i> Define and manage salary-related details for <strong>{{ user.name }}</strong> ({{ user.employee_id }}). 
+        Salary components are calculated automatically based on the defined wage.
     </div>
     
-    <form method="POST" action="{{ url_for('payroll.salary_structure', user_id=user.id) }}">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label" for="basic_salary">
-                        <i class="fas fa-rupee-sign"></i> Basic Salary *
-                    </label>
-                    <input type="number" 
-                           class="form-control" 
-                           id="basic_salary" 
-                           name="basic_salary" 
-                           step="0.01" 
-                           min="0" 
-                           value="{{ settings.basic_salary if settings else '0' }}" 
-                           required>
-                    <small class="form-text text-muted">Monthly basic salary amount</small>
-                </div>
+    <form method="POST" action="{{ url_for('payroll.salary_structure', user_id=user.id) }}" id="salaryForm">
+        <!-- Wage Type Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-wallet"></i> Wage Type
+                </h3>
             </div>
-            
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label" for="hra_percentage">
-                        <i class="fas fa-percentage"></i> HRA Percentage *
-                    </label>
-                    <input type="number" 
-                           class="form-control" 
-                           id="hra_percentage" 
-                           name="hra_percentage" 
-                           step="0.1" 
-                           min="0" 
-                           max="100" 
-                           value="{{ settings.hra_percentage if settings else '0' }}" 
-                           required>
-                    <small class="form-text text-muted">House Rent Allowance percentage (0-100%)</small>
-                </div>
-            </div>
-        </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label" for="conveyance">
-                        <i class="fas fa-car"></i> Conveyance Allowance
-                    </label>
-                    <input type="number" 
-                           class="form-control" 
-                           id="conveyance" 
-                           name="conveyance" 
-                           step="0.01" 
-                           min="0" 
-                           value="{{ settings.conveyance if settings else '0' }}" 
-                           required>
-                    <small class="form-text text-muted">Monthly conveyance allowance</small>
-                </div>
-            </div>
-            
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label" for="other_allowances">
-                        <i class="fas fa-plus-circle"></i> Other Allowances
-                    </label>
-                    <input type="number" 
-                           class="form-control" 
-                           id="other_allowances" 
-                           name="other_allowances" 
-                           step="0.01" 
-                           min="0" 
-                           value="{{ settings.other_allowances if settings else '0' }}" 
-                           required>
-                    <small class="form-text text-muted">Additional monthly allowances</small>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="wage_type">
+                                <i class="fas fa-tag"></i> Wage Type *
+                            </label>
+                            <select class="form-control" id="wage_type" name="wage_type" disabled>
+                                <option value="Fixed" selected>Fixed Wage</option>
+                            </select>
+                            <small class="form-text text-muted">Currently only Fixed Wage is supported</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="wage">
+                                <i class="fas fa-rupee-sign"></i> Wage Amount * (₹)
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="wage" 
+                                   name="wage" 
+                                   step="0.01" 
+                                   min="0" 
+                                   value="{{ settings.wage if settings and settings.wage else '0' }}" 
+                                   required
+                                   oninput="calculateComponents()">
+                            <small class="form-text text-muted">Monthly fixed wage amount</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <div class="row">
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label" for="pf_percentage">
-                        <i class="fas fa-percent"></i> PF Percentage *
-                    </label>
-                    <input type="number" 
-                           class="form-control" 
-                           id="pf_percentage" 
-                           name="pf_percentage" 
-                           step="0.1" 
-                           min="0" 
-                           max="100" 
-                           value="{{ settings.pf_percentage if settings else '12' }}" 
-                           required>
-                    <small class="form-text text-muted">Provident Fund percentage (default: 12%)</small>
-                </div>
+
+        <!-- Salary Components Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-calculator"></i> Salary Components
+                </h3>
             </div>
-            
-            <div class="col-md-6">
-                <div class="form-group">
-                    <label class="form-label" for="professional_tax_amount">
-                        <i class="fas fa-file-invoice-dollar"></i> Professional Tax
-                    </label>
-                    <input type="number" 
-                           class="form-control" 
-                           id="professional_tax_amount" 
-                           name="professional_tax_amount" 
-                           step="0.01" 
-                           min="0" 
-                           value="{{ settings.professional_tax_amount if settings else '200' }}" 
-                           required>
-                    <small class="form-text text-muted">Monthly professional tax amount (default: ₹200)</small>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>Note:</strong> The total of all components should not exceed the defined wage. 
+                    Fixed Allowance is automatically calculated as the remaining amount.
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="componentsTable">
+                        <thead>
+                            <tr>
+                                <th>Component Name</th>
+                                <th>Computation Type</th>
+                                <th>Value</th>
+                                <th>Base for Percentage</th>
+                                <th>Calculated Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="componentsBody">
+                            {% for comp in components %}
+                            <tr data-component-name="{{ comp.name }}">
+                                <td>
+                                    <strong>{{ comp.name }}</strong>
+                                    <input type="hidden" name="component_name[]" value="{{ comp.name }}">
+                                    <input type="hidden" name="component_order[]" value="{{ comp.display_order }}">
+                                </td>
+                                <td>
+                                    {% if comp.name == 'Fixed Allowance' %}
+                                        <span class="badge badge-info">Auto-calculated</span>
+                                        <input type="hidden" name="component_type[]" value="Fixed">
+                                    {% else %}
+                                        <select class="form-control form-control-sm component-type" name="component_type[]" onchange="calculateComponents()">
+                                            <option value="Fixed" {% if comp.computation_type == 'Fixed' %}selected{% endif %}>Fixed Amount</option>
+                                            <option value="Percentage" {% if comp.computation_type == 'Percentage' %}selected{% endif %}>Percentage</option>
+                                        </select>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if comp.name == 'Fixed Allowance' %}
+                                        <input type="number" 
+                                               class="form-control form-control-sm component-value" 
+                                               name="component_value[]" 
+                                               step="0.01" 
+                                               min="0" 
+                                               value="{{ comp.value }}" 
+                                               readonly
+                                               style="background-color: #e9ecef;">
+                                    {% else %}
+                                        <input type="number" 
+                                               class="form-control form-control-sm component-value" 
+                                               name="component_value[]" 
+                                               step="0.0001" 
+                                               min="0" 
+                                               value="{{ comp.value }}" 
+                                               oninput="calculateComponents()"
+                                               placeholder="Amount or %">
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if comp.name == 'Fixed Allowance' %}
+                                        <span class="text-muted">-</span>
+                                        <input type="hidden" name="component_base[]" value="Wage">
+                                    {% elif comp.computation_type == 'Fixed' %}
+                                        <span class="text-muted">-</span>
+                                        <input type="hidden" name="component_base[]" value="Wage">
+                                    {% else %}
+                                        <select class="form-control form-control-sm component-base" name="component_base[]" onchange="calculateComponents()">
+                                            <option value="Wage" {% if comp.base_for_percentage == 'Wage' %}selected{% endif %}>Wage</option>
+                                            <option value="Basic" {% if comp.base_for_percentage == 'Basic' %}selected{% endif %}>Basic</option>
+                                        </select>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong class="component-amount" data-component="{{ comp.name }}">₹0.00</strong>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-info">
+                                <td colspan="4" class="text-right"><strong>Total Components:</strong></td>
+                                <td><strong id="totalComponents">₹0.00</strong></td>
+                            </tr>
+                            <tr class="table-{% if settings and settings.wage %}success{% else %}secondary{% endif %}">
+                                <td colspan="4" class="text-right"><strong>Wage:</strong></td>
+                                <td><strong id="totalWage">₹0.00</strong></td>
+                            </tr>
+                            <tr class="table-{% if settings and settings.wage %}warning{% else %}secondary{% endif %}" id="remainingRow">
+                                <td colspan="4" class="text-right"><strong>Remaining:</strong></td>
+                                <td><strong id="remainingAmount">₹0.00</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
         </div>
-        
-        <div class="alert alert-success">
-            <h5><i class="fas fa-calculator"></i> Salary Calculation Preview</h5>
-            <p class="mb-1"><strong>Gross Salary</strong> = Basic Salary + HRA + Conveyance + Other Allowances</p>
-            <p class="mb-1"><strong>PF Contribution</strong> = Basic Salary × PF%</p>
-            <p class="mb-0"><strong>Net Salary</strong> = Gross Salary - PF - Professional Tax - Other Deductions</p>
+
+        <!-- Benefits Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0">
+                    <i class="fas fa-shield-alt"></i> Benefits & Deductions
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="pf_percentage">
+                                <i class="fas fa-percent"></i> PF Percentage *
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="pf_percentage" 
+                                   name="pf_percentage" 
+                                   step="0.1" 
+                                   min="0" 
+                                   max="100" 
+                                   value="{{ settings.pf_percentage if settings else '12' }}" 
+                                   required>
+                            <small class="form-text text-muted">Provident Fund percentage (default: 12%)</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" for="professional_tax_amount">
+                                <i class="fas fa-file-invoice-dollar"></i> Professional Tax (₹)
+                            </label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="professional_tax_amount" 
+                                   name="professional_tax_amount" 
+                                   step="0.01" 
+                                   min="0" 
+                                   value="{{ settings.professional_tax_amount if settings else '200' }}" 
+                                   required>
+                            <small class="form-text text-muted">Monthly professional tax amount (default: ₹200)</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="d-flex gap-2">
@@ -146,5 +220,141 @@
         </div>
     </form>
 </div>
-{% endblock %}
 
+<script>
+function calculateComponents() {
+    const wage = parseFloat(document.getElementById('wage').value) || 0;
+    const rows = document.querySelectorAll('#componentsBody tr');
+    const components = {};
+    let basicAmount = 0;
+    
+    // Update wage display
+    document.getElementById('totalWage').textContent = '₹' + wage.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    // First pass: Calculate all components
+    rows.forEach(row => {
+        const componentName = row.dataset.componentName;
+        const typeSelect = row.querySelector('.component-type');
+        const valueInput = row.querySelector('.component-value');
+        const baseSelect = row.querySelector('.component-base');
+        const amountElement = row.querySelector('.component-amount');
+        
+        if (!componentName || componentName === 'Fixed Allowance') {
+            return; // Skip Fixed Allowance for now
+        }
+        
+        const type = typeSelect ? typeSelect.value : 'Fixed';
+        const value = parseFloat(valueInput.value) || 0;
+        const base = baseSelect ? baseSelect.value : 'Wage';
+        
+        let amount = 0;
+        
+        if (type === 'Fixed') {
+            amount = value;
+        } else if (type === 'Percentage') {
+            if (base === 'Basic') {
+                // Will calculate after Basic is known
+                if (componentName === 'Basic') {
+                    amount = wage * value / 100;
+                    basicAmount = amount;
+                }
+            } else {
+                amount = wage * value / 100;
+            }
+        }
+        
+        components[componentName] = {
+            type: type,
+            value: value,
+            base: base,
+            amount: amount
+        };
+        
+        if (amountElement) {
+            amountElement.textContent = '₹' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+    });
+    
+    // Second pass: Calculate components that depend on Basic
+    rows.forEach(row => {
+        const componentName = row.dataset.componentName;
+        const typeSelect = row.querySelector('.component-type');
+        const baseSelect = row.querySelector('.component-base');
+        const amountElement = row.querySelector('.component-amount');
+        
+        if (!componentName || componentName === 'Basic' || componentName === 'Fixed Allowance') {
+            return;
+        }
+        
+        if (typeSelect && baseSelect) {
+            const type = typeSelect.value;
+            const base = baseSelect.value;
+            
+            if (type === 'Percentage' && base === 'Basic' && basicAmount > 0) {
+                const value = parseFloat(row.querySelector('.component-value').value) || 0;
+                const amount = basicAmount * value / 100;
+                if (components[componentName]) {
+                    components[componentName].amount = amount;
+                } else {
+                    components[componentName] = {
+                        type: type,
+                        value: value,
+                        base: base,
+                        amount: amount
+                    };
+                }
+                
+                if (amountElement) {
+                    amountElement.textContent = '₹' + amount.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                }
+            }
+        }
+    });
+    
+    // Calculate total of all components (except Fixed Allowance)
+    let total = 0;
+    Object.keys(components).forEach(name => {
+        if (name !== 'Fixed Allowance') {
+            total += components[name].amount || 0;
+        }
+    });
+    
+    // Calculate Fixed Allowance (remaining amount)
+    const remaining = Math.max(0, wage - total);
+    const fixedAllowanceRow = document.querySelector('tr[data-component-name="Fixed Allowance"]');
+    if (fixedAllowanceRow) {
+        const fixedAllowanceValue = fixedAllowanceRow.querySelector('.component-value');
+        const fixedAllowanceAmount = fixedAllowanceRow.querySelector('.component-amount');
+        
+        if (fixedAllowanceValue) {
+            fixedAllowanceValue.value = remaining.toFixed(2);
+        }
+        if (fixedAllowanceAmount) {
+            fixedAllowanceAmount.textContent = '₹' + remaining.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+        
+        total += remaining;
+    }
+    
+    // Update totals
+    document.getElementById('totalComponents').textContent = '₹' + total.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    document.getElementById('remainingAmount').textContent = '₹' + (wage - total).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    
+    // Update row colors based on validation
+    const remainingRow = document.getElementById('remainingRow');
+    if (total > wage + 0.01) {
+        remainingRow.className = 'table-danger';
+        document.getElementById('remainingAmount').textContent = '₹' + (wage - total).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' (Exceeds wage!)';
+    } else if (total <= wage) {
+        remainingRow.className = 'table-success';
+    } else {
+        remainingRow.className = 'table-warning';
+    }
+}
+
+// Calculate on page load
+document.addEventListener('DOMContentLoaded', function() {
+    calculateComponents();
+});
+</script>
+{% endblock %}

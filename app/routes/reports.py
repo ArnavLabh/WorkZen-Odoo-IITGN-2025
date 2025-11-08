@@ -4,7 +4,7 @@ from app import db
 from app.models import Attendance, Leave, Payroll, User
 from app.utils.decorators import employee_or_above_required, payroll_required
 from datetime import datetime, date, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 
 bp = Blueprint('reports', __name__)
 
@@ -14,7 +14,7 @@ def generate():
     # Employees cannot access reports
     if current_user.role == 'Employee':
         flash('You do not have permission to access reports', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('settings.profile'))
     return render_template('reports/generate.html')
 
 @bp.route('/attendance')
@@ -23,7 +23,7 @@ def attendance():
     # Employees cannot access reports - they can only view their own data via attendance list
     if current_user.role == 'Employee':
         flash('You do not have permission to access reports', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('settings.profile'))
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     user_id = request.args.get('user_id', '')
@@ -83,7 +83,7 @@ def leave():
     # Employees cannot access reports - they can only view their own leaves via leave list
     if current_user.role == 'Employee':
         flash('You do not have permission to access reports', 'danger')
-        return redirect(url_for('dashboard.dashboard'))
+        return redirect(url_for('settings.profile'))
     start_date = request.args.get('start_date', '')
     end_date = request.args.get('end_date', '')
     user_id = request.args.get('user_id', '')
@@ -162,17 +162,17 @@ def payroll():
     # Filter by date range
     if start_year and start_month:
         query = query.filter(
-            db.or_(
+            or_(
                 Payroll.year > int(start_year),
-                db.and_(Payroll.year == int(start_year), Payroll.month >= int(start_month))
+                and_(Payroll.year == int(start_year), Payroll.month >= int(start_month))
             )
         )
     
     if end_year and end_month:
         query = query.filter(
-            db.or_(
+            or_(
                 Payroll.year < int(end_year),
-                db.and_(Payroll.year == int(end_year), Payroll.month <= int(end_month))
+                and_(Payroll.year == int(end_year), Payroll.month <= int(end_month))
             )
         )
     

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, flash, redirect, url_for
 from flask_login import login_required, current_user
 from app import db
-from app.models import Payroll, PayrollSettings, User
+from app.models import Payroll, PayrollSettings, SalaryComponent, User
 from app.utils.decorators import admin_required, payroll_required, employee_or_above_required
 from app.utils.calculations import calculate_monthly_salary
 from datetime import datetime, date
@@ -80,7 +80,7 @@ def generate():
         
         # Get payroll settings
         settings = PayrollSettings.query.filter_by(user_id=user_id).first()
-        if not settings or settings.basic_salary == 0:
+        if not settings or (settings.wage == 0 and settings.basic_salary == 0):
             flash(f'Please set salary structure for {user.name} first', 'danger')
             return redirect(url_for('payroll.generate'))
         
@@ -123,7 +123,7 @@ def generate():
     for emp in employees:
         settings = PayrollSettings.query.filter_by(user_id=emp.id).first()
         employee_settings_map[emp.id] = settings
-        if not settings or settings.basic_salary == 0:
+        if not settings or (settings.wage == 0 and settings.basic_salary == 0):
             employees_without_salary.append(emp)
     
     return render_template('payroll/generate.html', 
@@ -217,6 +217,8 @@ def salary_structure_list():
 @payroll_required
 def salary_structure(user_id):
     """Set or update salary structure for an employee"""
+    from decimal import Decimal
+    
     user = User.query.get_or_404(user_id)
     
     if user.role != 'Employee':
@@ -225,63 +227,176 @@ def salary_structure(user_id):
     
     settings = PayrollSettings.query.filter_by(user_id=user_id).first()
     
+    # Default component definitions
+    DEFAULT_COMPONENTS = [
+        {'name': 'Basic', 'computation_type': 'Percentage', 'value': 50.0, 'base_for_percentage': 'Wage', 'display_order': 1},
+        {'name': 'House Rent Allowance', 'computation_type': 'Percentage', 'value': 50.0, 'base_for_percentage': 'Basic', 'display_order': 2},
+        {'name': 'Standard Allowance', 'computation_type': 'Fixed', 'value': 4167.0, 'base_for_percentage': 'Wage', 'display_order': 3},
+        {'name': 'Performance Bonus', 'computation_type': 'Percentage', 'value': 8.33, 'base_for_percentage': 'Wage', 'display_order': 4},
+        {'name': 'Leave Travel Allowance', 'computation_type': 'Percentage', 'value': 8.333, 'base_for_percentage': 'Wage', 'display_order': 5},
+        {'name': 'Fixed Allowance', 'computation_type': 'Fixed', 'value': 0.0, 'base_for_percentage': 'Wage', 'display_order': 6},  # Will be calculated as remaining
+    ]
+    
     if not settings:
-        # Create new settings
+        # Create new settings with default wage
         settings = PayrollSettings(
             user_id=user_id,
-            basic_salary=0.0,
-            hra_percentage=0.0,
-            conveyance=0.0,
-            other_allowances=0.0,
+            wage=0.0,
+            wage_type='Fixed',
             pf_percentage=12.0,
             professional_tax_amount=200.0
         )
         db.session.add(settings)
         db.session.flush()
+        
+        # Create default components if they don't exist
+        for comp_def in DEFAULT_COMPONENTS:
+            component = SalaryComponent(
+                payroll_settings_id=settings.id,
+                name=comp_def['name'],
+                computation_type=comp_def['computation_type'],
+                value=comp_def['value'],
+                base_for_percentage=comp_def['base_for_percentage'],
+                display_order=comp_def['display_order']
+            )
+            db.session.add(component)
+        db.session.commit()
     
     if request.method == 'POST':
-        basic_salary = float(request.form.get('basic_salary', 0))
-        hra_percentage = float(request.form.get('hra_percentage', 0))
-        conveyance = float(request.form.get('conveyance', 0))
-        other_allowances = float(request.form.get('other_allowances', 0))
+        wage = float(request.form.get('wage', 0))
         pf_percentage = float(request.form.get('pf_percentage', 12.0))
         professional_tax_amount = float(request.form.get('professional_tax_amount', 200.0))
         
         errors = []
         
-        if basic_salary <= 0:
-            errors.append('Basic salary must be greater than 0')
-        
-        if hra_percentage < 0 or hra_percentage > 100:
-            errors.append('HRA percentage must be between 0 and 100')
+        if wage <= 0:
+            errors.append('Wage must be greater than 0')
         
         if pf_percentage < 0 or pf_percentage > 100:
             errors.append('PF percentage must be between 0 and 100')
         
-        if conveyance < 0:
-            errors.append('Conveyance cannot be negative')
-        
-        if other_allowances < 0:
-            errors.append('Other allowances cannot be negative')
-        
         if professional_tax_amount < 0:
             errors.append('Professional tax cannot be negative')
+        
+        # Get component data from form
+        component_names = request.form.getlist('component_name[]')
+        component_types = request.form.getlist('component_type[]')
+        component_values = request.form.getlist('component_value[]')
+        component_bases = request.form.getlist('component_base[]')
+        component_orders = request.form.getlist('component_order[]')
+        
+        # Validate and process components
+        components_data = []
+        
+        # First pass: Store all component data
+        for i, name in enumerate(component_names):
+            if i < len(component_types) and i < len(component_values) and i < len(component_bases):
+                comp_type = component_types[i]
+                try:
+                    comp_value = float(component_values[i])
+                except (ValueError, TypeError):
+                    comp_value = 0.0
+                comp_base = component_bases[i] if i < len(component_bases) else 'Wage'
+                comp_order = int(component_orders[i]) if i < len(component_orders) and component_orders[i] else i + 1
+                
+                components_data.append({
+                    'name': name,
+                    'type': comp_type,
+                    'value': comp_value,
+                    'base': comp_base,
+                    'order': comp_order,
+                    'amount': 0.0  # Will be calculated
+                })
+        
+        # Second pass: Calculate Basic first
+        basic_amount = 0.0
+        for comp in components_data:
+            if comp['name'] == 'Basic':
+                if comp['type'] == 'Percentage':
+                    basic_amount = wage * comp['value'] / 100.0
+                else:
+                    basic_amount = comp['value']
+                comp['amount'] = basic_amount
+                break
+        
+        # Third pass: Calculate all other components
+        total_components = 0.0
+        for comp in components_data:
+            if comp['name'] == 'Fixed Allowance':
+                # Skip Fixed Allowance for now
+                continue
+            
+            if comp['amount'] > 0:
+                # Already calculated (Basic)
+                total_components += comp['amount']
+            elif comp['type'] == 'Fixed':
+                comp['amount'] = comp['value']
+                total_components += comp['amount']
+            elif comp['type'] == 'Percentage':
+                if comp['base'] == 'Basic' and basic_amount > 0:
+                    comp['amount'] = basic_amount * comp['value'] / 100.0
+                else:
+                    comp['amount'] = wage * comp['value'] / 100.0
+                total_components += comp['amount']
+        
+        # Fourth pass: Calculate Fixed Allowance (remaining amount)
+        remaining = wage - total_components
+        for comp in components_data:
+            if comp['name'] == 'Fixed Allowance':
+                comp['amount'] = max(0, remaining)  # Ensure non-negative
+                comp['value'] = comp['amount']  # Update the value to the calculated amount
+                total_components += comp['amount']
+                break
+        
+        # Validate total doesn't exceed wage
+        if total_components > wage + 0.01:  # Allow small floating point differences
+            errors.append(f'Total of all components (₹{total_components:,.2f}) exceeds wage (₹{wage:,.2f})')
         
         if errors:
             for error in errors:
                 flash(error, 'danger')
         else:
-            settings.basic_salary = basic_salary
-            settings.hra_percentage = hra_percentage
-            settings.conveyance = conveyance
-            settings.other_allowances = other_allowances
+            # Update settings
+            settings.wage = wage
+            settings.wage_type = 'Fixed'
             settings.pf_percentage = pf_percentage
             settings.professional_tax_amount = professional_tax_amount
             settings.updated_at = datetime.utcnow()
+            
+            # Delete existing components and recreate
+            SalaryComponent.query.filter_by(payroll_settings_id=settings.id).delete()
+            
+            for comp_data in components_data:
+                component = SalaryComponent(
+                    payroll_settings_id=settings.id,
+                    name=comp_data['name'],
+                    computation_type=comp_data['type'],
+                    value=comp_data['value'],
+                    base_for_percentage=comp_data['base'],
+                    display_order=comp_data['order']
+                )
+                db.session.add(component)
             
             db.session.commit()
             flash(f'Salary structure for {user.name} updated successfully!', 'success')
             return redirect(url_for('payroll.salary_structure_list'))
     
-    return render_template('payroll/salary_structure.html', user=user, settings=settings)
+    # GET request - get components or use defaults
+    components = list(settings.salary_components.all()) if settings else []
+    if not components:
+        # Create default components for display
+        components = []
+        for comp_def in DEFAULT_COMPONENTS:
+            components.append(type('Component', (), {
+                'name': comp_def['name'],
+                'computation_type': comp_def['computation_type'],
+                'value': comp_def['value'],
+                'base_for_percentage': comp_def['base_for_percentage'],
+                'display_order': comp_def['display_order']
+            })())
+    
+    # Sort components by display order
+    components = sorted(components, key=lambda x: x.display_order)
+    
+    return render_template('payroll/salary_structure.html', user=user, settings=settings, components=components)
 
