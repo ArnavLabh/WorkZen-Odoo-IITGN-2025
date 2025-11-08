@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}My Payslips - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-file-invoice-dollar"></i> My Payslips
+        </h1>
+    </div>
+    
+    <div class="table-container">
+        <table class="table" id="data-table">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Year</th>
+                    <th>Gross Salary</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payroll in payrolls %}
+                <tr>
+                    <td>{{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][payroll.month] }}</td>
+                    <td>{{ payroll.year }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.gross_salary) }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.total_deductions) }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.net_salary) }}</td>
+                    <td>
+                        {% if payroll.status == 'Paid' %}
+                            <span class="badge badge-success">Paid</span>
+                        {% else %}
+                            <span class="badge badge-warning">Unpaid</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i> View Payslip
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center">No payslips found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Report - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-money-bill-wave"></i> Payroll Report
+        </h1>
+        <a href="{{ url_for('reports.generate') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <form method="GET" action="{{ url_for('reports.payroll') }}" class="mb-3">
+        <div class="row">
+            <div class="col-2">
+                <select name="user_id" class="form-control">
+                    <option value="">All Employees</option>
+                    {% for user in users %}
+                    <option value="{{ user.id }}" {% if user_id == user.id|string %}selected{% endif %}>
+                        {{ user.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-2">
+                <select name="start_month" class="form-control">
+                    <option value="">Start Month</option>
+                    {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if start_month == i|string %}selected{% endif %}>
+                        {{ ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-2">
+                <select name="start_year" class="form-control">
+                    <option value="">Start Year</option>
+                    {% for year in range(2020, 2030) %}
+                    <option value="{{ year }}" {% if start_year == year|string %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-2">
+                <select name="end_month" class="form-control">
+                    <option value="">End Month</option>
+                    {% for i in range(1, 13) %}
+                    <option value="{{ i }}" {% if end_month == i|string %}selected{% endif %}>
+                        {{ ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i] }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-2">
+                <select name="end_year" class="form-control">
+                    <option value="">End Year</option>
+                    {% for year in range(2020, 2030) %}
+                    <option value="{{ year }}" {% if end_year == year|string %}selected{% endif %}>{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Generate
+                </button>
+            </div>
+        </div>
+    </form>
+    
+    <div class="stats-grid mb-3">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_payrolls }}</div>
+            <div class="stat-label">Total Payrolls</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">₹{{ "%.2f"|format(total_gross) }}</div>
+            <div class="stat-label">Total Gross</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">₹{{ "%.2f"|format(total_deductions) }}</div>
+            <div class="stat-label">Total Deductions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">₹{{ "%.2f"|format(total_net) }}</div>
+            <div class="stat-label">Total Net</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ paid_count }}</div>
+            <div class="stat-label">Paid</div>
+        </div>
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Month/Year</th>
+                    <th>Gross Salary</th>
+                    <th>Deductions</th>
+                    <th>Net Salary</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payroll in payrolls %}
+                <tr>
+                    <td>{{ payroll.user.name }}</td>
+                    <td>{{ ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][payroll.month] }}/{{ payroll.year }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.gross_salary) }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.total_deductions) }}</td>
+                    <td>₹{{ "%.2f"|format(payroll.net_salary) }}</td>
+                    <td>
+                        {% if payroll.status == 'Paid' %}
+                            <span class="badge badge-success">Paid</span>
+                        {% else %}
+                            <span class="badge badge-warning">Unpaid</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center">No records found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

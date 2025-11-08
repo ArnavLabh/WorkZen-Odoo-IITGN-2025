@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-check"></i> Mark Attendance
+        </h1>
+        <a href="{{ url_for('attendance.list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <form method="POST" action="{{ url_for('attendance.mark') }}">
+        {% if current_user.role in ['Admin', 'HR Officer'] %}
+        <div class="form-group">
+            <label class="form-label" for="user_id">
+                <i class="fas fa-user"></i> Employee *
+            </label>
+            <select class="form-control" id="user_id" name="user_id" required>
+                {% for user in users %}
+                <option value="{{ user.id }}" {% if user.id|string == user_id|string %}selected{% endif %}>
+                    {{ user.name }} ({{ user.employee_id }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% else %}
+        <input type="hidden" name="user_id" value="{{ current_user.id }}">
+        {% endif %}
+        
+        <div class="form-group">
+            <label class="form-label" for="date">
+                <i class="fas fa-calendar"></i> Date *
+            </label>
+            <input type="date" class="form-control" id="date" name="date" value="{{ attendance_date }}" required>
+        </div>
+        
+        <div class="row">
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="check_in">
+                        <i class="fas fa-sign-in-alt"></i> Check In
+                    </label>
+                    <input type="time" class="form-control" id="check_in" name="check_in" value="{{ existing.check_in.strftime('%H:%M') if existing and existing.check_in else '' }}">
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="check_out">
+                        <i class="fas fa-sign-out-alt"></i> Check Out
+                    </label>
+                    <input type="time" class="form-control" id="check_out" name="check_out" value="{{ existing.check_out.strftime('%H:%M') if existing and existing.check_out else '' }}">
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="status">
+                <i class="fas fa-info-circle"></i> Status *
+            </label>
+            <select class="form-control" id="status" name="status" required>
+                <option value="Present" {% if existing and existing.status == 'Present' %}selected{% endif %}>Present</option>
+                <option value="Half Day" {% if existing and existing.status == 'Half Day' %}selected{% endif %}>Half Day</option>
+                <option value="Absent" {% if existing and existing.status == 'Absent' %}selected{% endif %}>Absent</option>
+            </select>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {{ 'Update' if existing else 'Mark' }} Attendance
+            </button>
+            <a href="{{ url_for('attendance.list') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

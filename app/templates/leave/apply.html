@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Apply for Time Off - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-plus"></i> New Time Off
+        </h1>
+        <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <form method="POST" action="{{ url_for('leave.apply') }}">
+        <div class="form-group">
+            <label class="form-label" for="leave_type">
+                <i class="fas fa-calendar-alt"></i> Leave Type *
+            </label>
+            <select class="form-control" id="leave_type" name="leave_type" required>
+                <option value="">Select Leave Type</option>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Casual Leave">Casual Leave</option>
+                <option value="Annual Leave">Annual Leave</option>
+                <option value="Personal Leave">Personal Leave</option>
+                <option value="Emergency Leave">Emergency Leave</option>
+            </select>
+        </div>
+        
+        <div class="row">
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="start_date">
+                        <i class="fas fa-calendar"></i> Start Date *
+                    </label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" required>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="end_date">
+                        <i class="fas fa-calendar"></i> End Date *
+                    </label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" required>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="reason">
+                <i class="fas fa-comment"></i> Reason
+            </label>
+            <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="Enter reason for leave..."></textarea>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-paper-plane"></i> Apply
+            </button>
+            <a href="{{ url_for('leave.list') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

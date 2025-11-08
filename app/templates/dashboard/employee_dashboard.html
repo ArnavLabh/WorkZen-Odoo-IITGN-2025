@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Dashboard - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-tachometer-alt"></i> My Dashboard
+        </h1>
+    </div>
+    
+    <!-- Today's Status -->
+    <div class="card mb-3">
+        <h2 class="card-title">
+            <i class="fas fa-calendar-day"></i> Today's Attendance
+        </h2>
+        {% if today_attendance %}
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Status</div>
+                    <div class="stat-value">
+                        {% if today_attendance.status == 'Present' %}
+                            <span class="badge badge-success">Present</span>
+                        {% elif today_attendance.status == 'Half Day' %}
+                            <span class="badge badge-warning">Half Day</span>
+                        {% else %}
+                            <span class="badge badge-danger">Absent</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Check In</div>
+                    <div class="stat-value">{{ today_attendance.check_in.strftime('%H:%M') if today_attendance.check_in else '-' }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Check Out</div>
+                    <div class="stat-value">{{ today_attendance.check_out.strftime('%H:%M') if today_attendance.check_out else '-' }}</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Working Hours</div>
+                    <div class="stat-value">{{ "%.1f"|format(today_attendance.working_hours) }} hrs</div>
+                </div>
+            </div>
+        {% else %}
+            <p>No attendance marked for today. <a href="{{ url_for('attendance.mark') }}">Mark Attendance</a></p>
+        {% endif %}
+    </div>
+    
+    <!-- Monthly Statistics -->
+    <div class="card mb-3">
+        <h2 class="card-title">
+            <i class="fas fa-chart-bar"></i> This Month's Statistics
+        </h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">{{ present_count }}</div>
+                <div class="stat-label">Present Days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ absent_count }}</div>
+                <div class="stat-label">Absent Days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">{{ half_day_count }}</div>
+                <div class="stat-label">Half Days</div>
+            </div>
+        </div>
+        <div class="mt-2">
+            <a href="{{ url_for('attendance.list') }}" class="btn btn-primary">
+                <i class="fas fa-calendar-check"></i> View All Attendance
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-calendar-times"></i> My Time Off
+                </h2>
+                <a href="{{ url_for('leave.list') }}" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Leave Type</th>
+                            <th>Start Date</th>
+                            <th>End Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for leave in my_leaves %}
+                        <tr>
+                            <td>{{ leave.leave_type }}</td>
+                            <td>{{ leave.start_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if leave.status == 'Approved' %}
+                                    <span class="badge badge-success">Approved</span>
+                                {% elif leave.status == 'Rejected' %}
+                                    <span class="badge badge-danger">Rejected</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No leave requests found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-file-invoice-dollar"></i> My Payslips
+                </h2>
+                <a href="{{ url_for('payroll.my_payslips') }}" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Year</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payslip in my_payslips %}
+                        <tr>
+                            <td>{{ payslip.month }}</td>
+                            <td>{{ payslip.year }}</td>
+                            <td>₹{{ "%.2f"|format(payslip.net_salary) }}</td>
+                            <td>
+                                {% if payslip.status == 'Paid' %}
+                                    <span class="badge badge-success">Paid</span>
+                                {% else %}
+                                    <span class="badge badge-warning">Unpaid</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No payslips found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

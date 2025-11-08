@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-user"></i> My Profile
+        </h1>
+    </div>
+    
+    <form method="POST" action="{{ url_for('settings.profile') }}">
+        <div class="row">
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="employee_id">
+                        <i class="fas fa-id-card"></i> Employee ID
+                    </label>
+                    <input type="text" class="form-control" id="employee_id" value="{{ user.employee_id }}" disabled>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="name">
+                        <i class="fas fa-user"></i> Name *
+                    </label>
+                    <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="email">
+                <i class="fas fa-envelope"></i> Email *
+            </label>
+            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+        </div>
+        
+        <div class="row">
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="role">
+                        <i class="fas fa-user-tag"></i> Role
+                    </label>
+                    <input type="text" class="form-control" value="{{ user.role }}" disabled>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="form-group">
+                    <label class="form-label" for="date_of_joining">
+                        <i class="fas fa-calendar"></i> Date of Joining
+                    </label>
+                    <input type="text" class="form-control" value="{{ user.date_of_joining.strftime('%Y-%m-%d') }}" disabled>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="contact_number">
+                <i class="fas fa-phone"></i> Contact Number
+            </label>
+            <input type="text" class="form-control" id="contact_number" name="contact_number" value="{{ user.contact_number or '' }}" maxlength="10" pattern="[0-9]{10}">
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label" for="address">
+                <i class="fas fa-map-marker-alt"></i> Address
+            </label>
+            <textarea class="form-control" id="address" name="address" rows="3">{{ user.address or '' }}</textarea>
+        </div>
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Update Profile
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+

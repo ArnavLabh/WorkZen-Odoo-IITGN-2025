@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-tachometer-alt"></i> Admin Dashboard
+        </h1>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_employees }}</div>
+            <div class="stat-label">
+                <i class="fas fa-users"></i> Total Employees
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_admins }}</div>
+            <div class="stat-label">
+                <i class="fas fa-user-shield"></i> Admins
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_hr }}</div>
+            <div class="stat-label">
+                <i class="fas fa-user-tie"></i> HR Officers
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_payroll }}</div>
+            <div class="stat-label">
+                <i class="fas fa-calculator"></i> Payroll Officers
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ present_today }}</div>
+            <div class="stat-label">
+                <i class="fas fa-check-circle"></i> Present Today
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ pending_leaves }}</div>
+            <div class="stat-label">
+                <i class="fas fa-clock"></i> Pending Leaves
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-users"></i> Recent Employees
+                </h2>
+                <a href="{{ url_for('employees.list') }}" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Role</th>
+                            <th>Date of Joining</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in recent_employees %}
+                        <tr>
+                            <td>{{ employee.employee_id }}</td>
+                            <td>{{ employee.name }}</td>
+                            <td>
+                                <span class="badge badge-info">{{ employee.role }}</span>
+                            </td>
+                            <td>{{ employee.date_of_joining.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No employees found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    <i class="fas fa-calendar-check"></i> Recent Attendance
+                </h2>
+                <a href="{{ url_for('attendance.list') }}" class="btn btn-sm btn-primary">
+                    View All
+                </a>
+            </div>
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Check In</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in recent_attendance %}
+                        <tr>
+                            <td>{{ att.user.name }}</td>
+                            <td>{{ att.date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if att.status == 'Present' %}
+                                    <span class="badge badge-success">Present</span>
+                                {% elif att.status == 'Half Day' %}
+                                    <span class="badge badge-warning">Half Day</span>
+                                {% else %}
+                                    <span class="badge badge-danger">Absent</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ att.check_in.strftime('%H:%M') if att.check_in else '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center">No attendance records found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
