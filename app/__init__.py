@@ -20,6 +20,10 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
     babel.init_app(app)
     
+    # For serverless environments, we don't test the connection on startup
+    # Connections will be established lazily on first request
+    # This prevents cold start failures in Vercel
+    
     # Configure login manager
     login_manager.login_view = 'auth.login'
     login_manager.login_message = 'Please log in to access this page.'
@@ -44,7 +48,11 @@ def create_app(config_class=Config):
     
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        try:
+            return User.query.get(int(user_id))
+        except Exception as e:
+            app.logger.error(f'Error loading user: {e}')
+            return None
     
     # Register blueprints
     from app.routes.auth import bp as auth_bp
@@ -90,6 +98,19 @@ def create_app(config_class=Config):
         if current_user.is_authenticated:
             return redirect(url_for('dashboard.dashboard'))
         return redirect(url_for('auth.login'))
+    
+    # Error handlers for better error reporting
+    @app.errorhandler(500)
+    def internal_error(error):
+        from flask import jsonify
+        app.logger.error(f'Server Error: {error}', exc_info=True)
+        # Return JSON for API compatibility, or simple HTML
+        return jsonify({'error': 'Internal Server Error', 'message': str(error)}), 500
+    
+    @app.errorhandler(404)
+    def not_found_error(error):
+        from flask import jsonify
+        return jsonify({'error': 'Not Found', 'message': 'Page not found'}), 404
     
     return app
 
