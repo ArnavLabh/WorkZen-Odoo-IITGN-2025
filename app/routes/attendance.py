@@ -67,51 +67,53 @@ def list():
 @login_required
 @role_required(['Employee'])
 def checkin():
-    """Check in for today - Employee only"""
+    """Check in for today - Employee only - supports multiple check-ins"""
+    from app.models import AttendanceLog
     
     today = date.today()
     user_id = current_user.id
     
     try:
-        # Check if already checked in today
-        existing = Attendance.query.filter_by(user_id=user_id, date=today).first()
+        # Get or create attendance record for today
+        attendance = Attendance.query.filter_by(user_id=user_id, date=today).first()
         
-        if existing and existing.check_in:
-            flash('You have already checked in today', 'warning')
-            return redirect(request.referrer or url_for('settings.profile'))
-        
-        # Check if already checked out today (prevent checking in again after checkout)
-        if existing and existing.check_out:
-            flash('You have already checked out today', 'warning')
-            return redirect(request.referrer or url_for('settings.profile'))
-        
-        check_in_time = datetime.now().time()
-        
-        # Create new attendance entry on check-in
-        if existing:
-            # If record exists but no check-in, update it
-            existing.check_in = check_in_time
-            existing.status = 'Present'  # Always set to Present when checking in
-            existing.calculate_working_hours()
-        else:
+        if not attendance:
             # Create new attendance record
             attendance = Attendance(
                 user_id=user_id,
                 date=today,
-                check_in=check_in_time,
                 status='Present'
             )
-            attendance.calculate_working_hours()
             db.session.add(attendance)
+            db.session.flush()
         
+        # Check if already checked in (not checked out yet)
+        last_log = attendance.check_logs.order_by(AttendanceLog.id.desc()).first()
+        if last_log and last_log.log_type == 'check_in':
+            flash('You are already checked in. Please check out first.', 'warning')
+            return redirect(request.referrer or url_for('settings.profile'))
+        
+        # Create check-in log
+        check_in_time = datetime.now().time()
+        log = AttendanceLog(
+            attendance_id=attendance.id,
+            log_type='check_in',
+            timestamp=check_in_time
+        )
+        db.session.add(log)
+        
+        # Update first check-in time if not set
+        if not attendance.check_in:
+            attendance.check_in = check_in_time
+        
+        attendance.status = 'Present'
         db.session.commit()
+        
         flash('Checked in successfully!', 'success')
     except (OperationalError, InternalError, ProgrammingError) as e:
-        # Transaction error - rollback
         db.session.rollback()
         flash('Error checking in. Please try again.', 'danger')
     except Exception as e:
-        # Any other error - rollback
         db.session.rollback()
         flash('Error checking in. Please try again.', 'danger')
     
@@ -121,7 +123,8 @@ def checkin():
 @login_required
 @role_required(['Employee'])
 def checkout():
-    """Check out for today - Employee only"""
+    """Check out for today - Employee only - supports multiple check-outs"""
+    from app.models import AttendanceLog
     
     today = date.today()
     user_id = current_user.id
@@ -133,26 +136,33 @@ def checkout():
             flash('Please check in first', 'danger')
             return redirect(request.referrer or url_for('settings.profile'))
         
-        if not attendance.check_in:
-            flash('Please check in first', 'danger')
+        # Check if already checked out (or never checked in)
+        last_log = attendance.check_logs.order_by(AttendanceLog.id.desc()).first()
+        if not last_log or last_log.log_type == 'check_out':
+            flash('You need to check in first', 'danger')
             return redirect(request.referrer or url_for('settings.profile'))
         
-        if attendance.check_out:
-            flash('You have already checked out today', 'warning')
-            return redirect(request.referrer or url_for('settings.profile'))
+        # Create check-out log
+        check_out_time = datetime.now().time()
+        log = AttendanceLog(
+            attendance_id=attendance.id,
+            log_type='check_out',
+            timestamp=check_out_time
+        )
+        db.session.add(log)
         
-        # Close attendance entry on check-out
-        attendance.check_out = datetime.now().time()
+        # Update last check-out time
+        attendance.check_out = check_out_time
+        
+        # Recalculate working hours
         attendance.calculate_working_hours()
-        db.session.commit()
         
+        db.session.commit()
         flash('Checked out successfully!', 'success')
     except (OperationalError, InternalError, ProgrammingError) as e:
-        # Transaction error - rollback
         db.session.rollback()
         flash('Error checking out. Please try again.', 'danger')
     except Exception as e:
-        # Any other error - rollback
         db.session.rollback()
         flash('Error checking out. Please try again.', 'danger')
     

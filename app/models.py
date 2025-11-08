@@ -15,6 +15,29 @@ class User(UserMixin, db.Model):
     date_of_joining = db.Column(db.Date, nullable=False)
     contact_number = db.Column(db.String(20))
     address = db.Column(db.Text)
+    
+    # Profile fields
+    profile_picture = db.Column(db.String(255))
+    job_position = db.Column(db.String(100))
+    company = db.Column(db.String(100))
+    department = db.Column(db.String(100))
+    manager_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    location = db.Column(db.String(100))
+    
+    # Private info fields
+    date_of_birth = db.Column(db.Date)
+    nationality = db.Column(db.String(50))
+    personal_email = db.Column(db.String(120))
+    gender = db.Column(db.String(20))
+    marital_status = db.Column(db.String(20))
+    
+    # Bank details
+    bank_account_number = db.Column(db.String(50))
+    bank_name = db.Column(db.String(100))
+    ifsc_code = db.Column(db.String(20))
+    pan_number = db.Column(db.String(20))
+    uan_number = db.Column(db.String(20))
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -24,6 +47,17 @@ class User(UserMixin, db.Model):
     payrolls = db.relationship('Payroll', backref='user', lazy='dynamic', cascade='all, delete-orphan')
     payroll_settings = db.relationship('PayrollSettings', backref='user', uselist=False, cascade='all, delete-orphan')
     approved_leaves = db.relationship('Leave', foreign_keys='Leave.approved_by', backref='approver', lazy='dynamic')
+    manager = db.relationship('User', remote_side=[id], backref='subordinates')
+    
+    @property
+    def has_missing_bank_info(self):
+        """Check if employee has missing bank information"""
+        return not self.bank_account_number or not self.bank_name or not self.ifsc_code
+    
+    @property
+    def has_missing_manager(self):
+        """Check if employee has no manager assigned"""
+        return self.manager_id is None
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -47,19 +81,55 @@ class Attendance(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Relationships
+    check_logs = db.relationship('AttendanceLog', backref='attendance', lazy='dynamic', cascade='all, delete-orphan', order_by='AttendanceLog.timestamp')
+    
     __table_args__ = (db.UniqueConstraint('user_id', 'date', name='unique_user_date'),)
     
     def calculate_working_hours(self):
-        if self.check_in and self.check_out:
-            from datetime import datetime, date
-            check_in_dt = datetime.combine(date.today(), self.check_in)
-            check_out_dt = datetime.combine(date.today(), self.check_out)
-            delta = check_out_dt - check_in_dt
-            self.working_hours = delta.total_seconds() / 3600.0
+        """Calculate total working hours from all check-in/check-out logs"""
+        total_hours = 0.0
+        logs = list(self.check_logs.order_by('timestamp').all())
+        
+        # Pair check-ins with check-outs
+        i = 0
+        while i < len(logs):
+            if logs[i].log_type == 'check_in':
+                # Find next check-out
+                j = i + 1
+                while j < len(logs) and logs[j].log_type != 'check_out':
+                    j += 1
+                
+                if j < len(logs):
+                    # Calculate hours between check-in and check-out
+                    check_in_dt = datetime.combine(self.date, logs[i].timestamp)
+                    check_out_dt = datetime.combine(self.date, logs[j].timestamp)
+                    delta = check_out_dt - check_in_dt
+                    total_hours += delta.total_seconds() / 3600.0
+                    i = j + 1
+                else:
+                    # No matching check-out
+                    break
+            else:
+                i += 1
+        
+        self.working_hours = total_hours
         return self.working_hours
     
     def __repr__(self):
         return f'<Attendance {self.user_id}: {self.date}>'
+
+class AttendanceLog(db.Model):
+    __tablename__ = 'attendance_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    attendance_id = db.Column(db.Integer, db.ForeignKey('attendances.id'), nullable=False, index=True)
+    log_type = db.Column(db.String(20), nullable=False)  # check_in, check_out
+    timestamp = db.Column(db.Time, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<AttendanceLog {self.attendance_id}: {self.log_type} at {self.timestamp}>'
 
 class Leave(db.Model):
     __tablename__ = 'leaves'
@@ -218,6 +288,7 @@ class Payroll(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
+    payrun_id = db.Column(db.Integer, db.ForeignKey('payruns.id'), index=True)
     month = db.Column(db.Integer, nullable=False)  # 1-12
     year = db.Column(db.Integer, nullable=False, index=True)
     basic_salary = db.Column(db.Numeric(10, 2), nullable=False)
@@ -239,4 +310,23 @@ class Payroll(db.Model):
     
     def __repr__(self):
         return f'<Payroll {self.user_id}: {self.month}/{self.year}>'
+
+class Payrun(db.Model):
+    __tablename__ = 'payruns'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    month = db.Column(db.Integer, nullable=False)  # 1-12
+    year = db.Column(db.Integer, nullable=False, index=True)
+    payslip_count = db.Column(db.Integer, default=0)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    payrolls = db.relationship('Payroll', backref='payrun', lazy='dynamic')
+    creator = db.relationship('User', foreign_keys=[created_by])
+    
+    __table_args__ = (db.UniqueConstraint('month', 'year', name='unique_month_year'),)
+    
+    def __repr__(self):
+        return f'<Payrun {self.month}/{self.year}: {self.payslip_count} payslips>'
 

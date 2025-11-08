@@ -44,7 +44,21 @@ def directory():
     from datetime import date, datetime
     
     search = request.args.get('search', '').strip()
+    filter_type = request.args.get('filter', '').strip()
+    
     query = User.query.filter(User.role == 'Employee')
+    
+    # Apply filters
+    if filter_type == 'no_bank':
+        query = query.filter(
+            or_(
+                User.bank_account_number == None,
+                User.bank_name == None,
+                User.ifsc_code == None
+            )
+        )
+    elif filter_type == 'no_manager':
+        query = query.filter(User.manager_id == None)
     
     if search:
         query = query.filter(

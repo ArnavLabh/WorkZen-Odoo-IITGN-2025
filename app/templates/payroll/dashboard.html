@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">Payroll Dashboard</h2>
+            
+            <!-- Warnings Section -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <h5 class="card-title text-warning">
+                                <i class="bi bi-exclamation-triangle"></i> Warnings
+                            </h5>
+                            <div class="list-group list-group-flush">
+                                {% if employees_without_bank > 0 %}
+                                <a href="{{ url_for('employees.directory', filter='no_bank') }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ employees_without_bank }} Employee(s) without Bank A/c</h6>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                    <p class="mb-0 text-muted small">Click to view employees with missing bank details</p>
+                                </a>
+                                {% endif %}
+                                {% if employees_without_manager > 0 %}
+                                <a href="{{ url_for('employees.directory', filter='no_manager') }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ employees_without_manager }} Employee(s) without Manager</h6>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </div>
+                                    <p class="mb-0 text-muted small">Click to view employees without assigned manager</p>
+                                </a>
+                                {% endif %}
+                                {% if employees_without_bank == 0 and employees_without_manager == 0 %}
+                                <div class="list-group-item">
+                                    <p class="mb-0 text-success"><i class="bi bi-check-circle"></i> No warnings at this time</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Quick Actions</h5>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Generate Payroll
+                                </a>
+                                <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-cash-stack"></i> Manage Salary Structures
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payrun History -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Payrun History</h5>
+                    {% if payruns %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Payslips Generated</th>
+                                    <th>Created By</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for payrun in payruns %}
+                                <tr>
+                                    <td>
+                                        <strong>
+                                            {% set month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+                                            {{ month_names[payrun.month] }} {{ payrun.year }}
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ payrun.payslip_count }} payslips</span>
+                                    </td>
+                                    <td>{{ payrun.creator.name if payrun.creator else 'N/A' }}</td>
+                                    <td>{{ payrun.created_at.strftime('%d %b %Y') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('payroll.generate', month=payrun.month, year=payrun.year) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No payrun history available.</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="card-title mb-0">Employer Cost</h5>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary active" onclick="showEmployerCostChart('monthly')">Monthly</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="showEmployerCostChart('annual')">Annual</button>
+                                </div>
+                            </div>
+                            <canvas id="employerCostChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Employee Count (Monthly)</h5>
+                            <canvas id="employeeCountChart" height="250"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Employer Cost Chart
+const employerCostMonthly = {{ employer_cost_monthly | tojson }};
+const employerCostAnnual = {{ employer_cost_annual | tojson }};
+let employerCostChart;
+
+function showEmployerCostChart(type) {
+    const ctx = document.getElementById('employerCostChart').getContext('2d');
+    
+    if (employerCostChart) {
+        employerCostChart.destroy();
+    }
+    
+    let labels, data;
+    if (type === 'monthly') {
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        data = employerCostMonthly.map(item => item.cost);
+    } else {
+        labels = employerCostAnnual.map(item => item.year);
+        data = employerCostAnnual.map(item => item.cost);
+    }
+    
+    employerCostChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Employer Cost (₹)',
+                data: data,
+                backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString();
+                        }
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Cost: ₹' + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Employee Count Chart
+const employeeCountMonthly = {{ employee_count_monthly | tojson }};
+const ctx2 = document.getElementById('employeeCountChart').getContext('2d');
+new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [{
+            label: 'Employee Count',
+            data: employeeCountMonthly.map(item => item.count),
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Initialize with monthly view
+showEmployerCostChart('monthly');
+</script>
+{% endblock %}

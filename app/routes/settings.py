@@ -8,46 +8,86 @@ from datetime import datetime
 
 bp = Blueprint('settings', __name__)
 
-@bp.route('/profile', methods=['GET', 'POST'])
+@bp.route('/profile', methods=['GET'])
 @login_required
 def profile():
-    # All roles can view and edit their own profile
+    """View employee profile with tabs"""
     user = current_user
     
-    if request.method == 'POST':
-        name = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
-        contact_number = request.form.get('contact_number', '').strip()
-        address = request.form.get('address', '').strip()
-        
-        errors = []
-        
-        if not name:
-            errors.append('Name is required')
-        
-        if not validate_email(email):
-            errors.append('Invalid email address')
-        elif email != user.email and User.query.filter_by(email=email).first():
-            errors.append('Email already registered')
-        
-        if contact_number and not validate_phone(contact_number):
-            errors.append('Invalid contact number (10 digits required)')
-        
-        if errors:
-            for error in errors:
-                flash(error, 'danger')
-        else:
-            user.name = name
-            user.email = email
-            user.contact_number = contact_number if contact_number else None
-            user.address = address if address else None
-            user.updated_at = datetime.utcnow()
-            
-            db.session.commit()
-            flash('Profile updated successfully!', 'success')
-            return redirect(url_for('settings.profile'))
+    # Get manager info if exists
+    manager = User.query.get(user.manager_id) if user.manager_id else None
     
-    return render_template('settings/profile.html', user=user)
+    # Get payroll settings for salary info
+    from app.models import PayrollSettings
+    payroll_settings = PayrollSettings.query.filter_by(user_id=user.id).first()
+    
+    return render_template('settings/profile.html', 
+                         user=user, 
+                         manager=manager,
+                         payroll_settings=payroll_settings)
+
+@bp.route('/profile/update-private-info', methods=['POST'])
+@login_required
+def update_private_info():
+    """Update private information"""
+    user = current_user
+    
+    date_of_birth = request.form.get('date_of_birth', '').strip()
+    nationality = request.form.get('nationality', '').strip()
+    personal_email = request.form.get('personal_email', '').strip()
+    gender = request.form.get('gender', '').strip()
+    marital_status = request.form.get('marital_status', '').strip()
+    
+    errors = []
+    
+    if personal_email and not validate_email(personal_email):
+        errors.append('Invalid personal email address')
+    
+    if date_of_birth:
+        try:
+            user.date_of_birth = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+        except ValueError:
+            errors.append('Invalid date of birth format')
+    
+    if errors:
+        for error in errors:
+            flash(error, 'danger')
+    else:
+        user.nationality = nationality if nationality else None
+        user.personal_email = personal_email if personal_email else None
+        user.gender = gender if gender else None
+        user.marital_status = marital_status if marital_status else None
+        user.address = request.form.get('address', '').strip() or None
+        user.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        flash('Private information updated successfully!', 'success')
+    
+    return redirect(url_for('settings.profile'))
+
+@bp.route('/profile/update-salary-info', methods=['POST'])
+@login_required
+def update_salary_info():
+    """Update salary/bank information"""
+    user = current_user
+    
+    bank_account_number = request.form.get('bank_account_number', '').strip()
+    bank_name = request.form.get('bank_name', '').strip()
+    ifsc_code = request.form.get('ifsc_code', '').strip()
+    pan_number = request.form.get('pan_number', '').strip()
+    uan_number = request.form.get('uan_number', '').strip()
+    
+    user.bank_account_number = bank_account_number if bank_account_number else None
+    user.bank_name = bank_name if bank_name else None
+    user.ifsc_code = ifsc_code if ifsc_code else None
+    user.pan_number = pan_number if pan_number else None
+    user.uan_number = uan_number if uan_number else None
+    user.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    flash('Bank details updated successfully!', 'success')
+    
+    return redirect(url_for('settings.profile'))
 
 @bp.route('/change-password', methods=['GET', 'POST'])
 @login_required

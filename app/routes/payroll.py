@@ -13,35 +13,68 @@ bp = Blueprint('payroll', __name__)
 @login_required
 @role_required(['Admin', 'Payroll Officer'])
 def list():
-    # Only Admin and Payroll Officer can access payroll list
-    # HR Officer and Employee cannot access
-    search = request.args.get('search', '').strip()
-    month_filter = request.args.get('month', '')
-    year_filter = request.args.get('year', '')
+    """Payroll Dashboard with warnings and payrun history"""
+    from app.models import Payrun
+    from sqlalchemy import func, extract
     
-    query = Payroll.query
-    
-    if search:
-        query = query.join(User).filter(
-            db.or_(
-                User.name.ilike(f'%{search}%'),
-                User.employee_id.ilike(f'%{search}%')
-            )
+    # Get warnings
+    employees_without_bank = User.query.filter(
+        User.role == 'Employee',
+        db.or_(
+            User.bank_account_number == None,
+            User.bank_name == None,
+            User.ifsc_code == None
         )
+    ).count()
     
-    if month_filter:
-        query = query.filter_by(month=int(month_filter))
+    employees_without_manager = User.query.filter(
+        User.role == 'Employee',
+        User.manager_id == None
+    ).count()
     
-    if year_filter:
-        query = query.filter_by(year=int(year_filter))
+    # Get payrun history
+    payruns = Payrun.query.order_by(Payrun.year.desc(), Payrun.month.desc()).limit(12).all()
     
-    payrolls = query.order_by(Payroll.year.desc(), Payroll.month.desc()).all()
+    # Get charts data - Employee count and employer cost
+    current_year = datetime.now().year
     
-    return render_template('payroll/list.html', 
-                         payrolls=payrolls, 
-                         search=search,
-                         month_filter=month_filter,
-                         year_filter=year_filter)
+    # Employee count by month (current year)
+    employee_count_monthly = []
+    for month in range(1, 13):
+        count = User.query.filter(
+            User.role == 'Employee',
+            extract('year', User.date_of_joining) <= current_year,
+            db.or_(
+                extract('year', User.date_of_joining) < current_year,
+                extract('month', User.date_of_joining) <= month
+            )
+        ).count()
+        employee_count_monthly.append({'month': month, 'count': count})
+    
+    # Employer cost by month (current year)
+    employer_cost_monthly = []
+    for month in range(1, 13):
+        cost = db.session.query(func.sum(Payroll.gross_salary)).filter(
+            Payroll.year == current_year,
+            Payroll.month == month
+        ).scalar() or 0
+        employer_cost_monthly.append({'month': month, 'cost': float(cost)})
+    
+    # Employer cost by year (last 5 years)
+    employer_cost_annual = []
+    for year in range(current_year - 4, current_year + 1):
+        cost = db.session.query(func.sum(Payroll.gross_salary)).filter(
+            Payroll.year == year
+        ).scalar() or 0
+        employer_cost_annual.append({'year': year, 'cost': float(cost)})
+    
+    return render_template('payroll/dashboard.html',
+                         employees_without_bank=employees_without_bank,
+                         employees_without_manager=employees_without_manager,
+                         payruns=payruns,
+                         employee_count_monthly=employee_count_monthly,
+                         employer_cost_monthly=employer_cost_monthly,
+                         employer_cost_annual=employer_cost_annual)
 
 @bp.route('/generate', methods=['GET', 'POST'])
 @login_required

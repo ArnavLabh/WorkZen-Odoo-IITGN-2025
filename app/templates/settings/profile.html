@@ -1,81 +1,227 @@
 {% extends "base.html" %}
 
-{% block title %}My Profile - WorkZen{% endblock %}
+{% block title %}My Profile{% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1 class="card-title">
-            <i class="fas fa-user"></i> My Profile
-        </h1>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">My Profile</h2>
+            
+            <!-- Profile Header -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            {% if user.profile_picture %}
+                            <img src="{{ user.profile_picture }}" alt="{{ user.name }}" class="rounded-circle" width="80" height="80">
+                            {% else %}
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 32px;">
+                                {{ user.name[0].upper() }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <h4 class="mb-1">{{ user.name }}</h4>
+                            <p class="text-muted mb-1">{{ user.job_position or 'N/A' }}</p>
+                            <p class="mb-0">
+                                <i class="bi bi-envelope"></i> {{ user.email }} &nbsp;
+                                <i class="bi bi-telephone"></i> {{ user.contact_number or 'N/A' }}
+                            </p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Company:</strong><br>
+                            {{ user.company or 'N/A' }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Department:</strong><br>
+                            {{ user.department or 'N/A' }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Manager:</strong><br>
+                            {% if manager %}
+                                {{ manager.name }}
+                            {% else %}
+                                <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> No Manager Assigned</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Location:</strong><br>
+                            {{ user.location or 'N/A' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button" role="tab">
+                        Resume
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="private-info-tab" data-bs-toggle="tab" data-bs-target="#private-info" type="button" role="tab">
+                        Private Info
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="salary-info-tab" data-bs-toggle="tab" data-bs-target="#salary-info" type="button" role="tab">
+                        Salary Info
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                        Security
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="profileTabsContent">
+                <!-- Resume Tab -->
+                <div class="tab-pane fade show active" id="resume" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Resume / Work History</h5>
+                            <p class="text-muted">Your work history and resume information will be displayed here.</p>
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> This section is under development.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Private Info Tab -->
+                <div class="tab-pane fade" id="private-info" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Private Information</h5>
+                            <form method="POST" action="{{ url_for('settings.update_private_info') }}">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                        <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                               value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="nationality" class="form-label">Nationality</label>
+                                        <input type="text" class="form-control" id="nationality" name="nationality" 
+                                               value="{{ user.nationality or '' }}">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="personal_email" class="form-label">Personal Email</label>
+                                        <input type="email" class="form-control" id="personal_email" name="personal_email" 
+                                               value="{{ user.personal_email or '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="gender" class="form-label">Gender</label>
+                                        <select class="form-select" id="gender" name="gender">
+                                            <option value="">Select Gender</option>
+                                            <option value="Male" {% if user.gender == 'Male' %}selected{% endif %}>Male</option>
+                                            <option value="Female" {% if user.gender == 'Female' %}selected{% endif %}>Female</option>
+                                            <option value="Other" {% if user.gender == 'Other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="marital_status" class="form-label">Marital Status</label>
+                                        <select class="form-select" id="marital_status" name="marital_status">
+                                            <option value="">Select Status</option>
+                                            <option value="Single" {% if user.marital_status == 'Single' %}selected{% endif %}>Single</option>
+                                            <option value="Married" {% if user.marital_status == 'Married' %}selected{% endif %}>Married</option>
+                                            <option value="Divorced" {% if user.marital_status == 'Divorced' %}selected{% endif %}>Divorced</option>
+                                            <option value="Widowed" {% if user.marital_status == 'Widowed' %}selected{% endif %}>Widowed</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="date_of_joining" class="form-label">Date of Joining</label>
+                                        <input type="date" class="form-control" id="date_of_joining" name="date_of_joining" 
+                                               value="{{ user.date_of_joining.strftime('%Y-%m-%d') }}" readonly>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Residing Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3">{{ user.address or '' }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Private Info</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Salary Info Tab -->
+                <div class="tab-pane fade" id="salary-info" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Bank Details</h5>
+                            {% if user.has_missing_bank_info %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> Please complete your bank details. Missing information will be flagged in the Payroll Dashboard.
+                            </div>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('settings.update_salary_info') }}">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="bank_account_number" class="form-label">Account Number *</label>
+                                        <input type="text" class="form-control" id="bank_account_number" name="bank_account_number" 
+                                               value="{{ user.bank_account_number or '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="bank_name" class="form-label">Bank Name *</label>
+                                        <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                                               value="{{ user.bank_name or '' }}">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="ifsc_code" class="form-label">IFSC Code *</label>
+                                        <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" 
+                                               value="{{ user.ifsc_code or '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="pan_number" class="form-label">PAN No</label>
+                                        <input type="text" class="form-control" id="pan_number" name="pan_number" 
+                                               value="{{ user.pan_number or '' }}">
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="uan_number" class="form-label">UAN No</label>
+                                        <input type="text" class="form-control" id="uan_number" name="uan_number" 
+                                               value="{{ user.uan_number or '' }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="employee_code" class="form-label">Employee Code</label>
+                                        <input type="text" class="form-control" id="employee_code" name="employee_code" 
+                                               value="{{ user.employee_id }}" readonly>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Update Bank Details</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Tab -->
+                <div class="tab-pane fade" id="security" role="tabpanel">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Change Password</h5>
+                            <p class="text-muted">Update your password to keep your account secure.</p>
+                            <a href="{{ url_for('settings.change_password') }}" class="btn btn-primary">
+                                <i class="bi bi-key"></i> Change Password
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <form method="POST" action="{{ url_for('settings.profile') }}">
-        <div class="row">
-            <div class="col-6">
-                <div class="form-group">
-                    <label class="form-label" for="employee_id">
-                        <i class="fas fa-id-card"></i> Employee ID
-                    </label>
-                    <input type="text" class="form-control" id="employee_id" value="{{ user.employee_id }}" disabled>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="form-group">
-                    <label class="form-label" for="name">
-                        <i class="fas fa-user"></i> Name *
-                    </label>
-                    <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
-                </div>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="email">
-                <i class="fas fa-envelope"></i> Email *
-            </label>
-            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
-        </div>
-        
-        <div class="row">
-            <div class="col-6">
-                <div class="form-group">
-                    <label class="form-label" for="role">
-                        <i class="fas fa-user-tag"></i> Role
-                    </label>
-                    <input type="text" class="form-control" value="{{ user.role }}" disabled>
-                </div>
-            </div>
-            <div class="col-6">
-                <div class="form-group">
-                    <label class="form-label" for="date_of_joining">
-                        <i class="fas fa-calendar"></i> Date of Joining
-                    </label>
-                    <input type="text" class="form-control" value="{{ user.date_of_joining.strftime('%Y-%m-%d') }}" disabled>
-                </div>
-            </div>
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="contact_number">
-                <i class="fas fa-phone"></i> Contact Number
-            </label>
-            <input type="text" class="form-control" id="contact_number" name="contact_number" value="{{ user.contact_number or '' }}" maxlength="10" pattern="[0-9]{10}">
-        </div>
-        
-        <div class="form-group">
-            <label class="form-label" for="address">
-                <i class="fas fa-map-marker-alt"></i> Address
-            </label>
-            <textarea class="form-control" id="address" name="address" rows="3">{{ user.address or '' }}</textarea>
-        </div>
-        
-        <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Update Profile
-            </button>
-        </div>
-    </form>
 </div>
 {% endblock %}
-

@@ -64,6 +64,9 @@
                     <a href="{{ url_for('settings.profile') }}" class="dropdown-item">
                         <i class="fas fa-user"></i> My Profile
                     </a>
+                    <a href="{{ url_for('settings.change_password') }}" class="dropdown-item">
+                        <i class="fas fa-key"></i> Change Password
+                    </a>
                     <div class="dropdown-item" style="border-top: 1px solid var(--border-color); margin-top: 0.5rem; padding-top: 0.75rem;">
                         <a href="{{ url_for('auth.logout') }}" class="dropdown-item" style="padding: 0;">
                             <i class="fas fa-sign-out-alt"></i> Log Out
@@ -84,18 +87,11 @@
                     </a>
                 </li>
                 
+                {% if current_user.role in ['Admin', 'HR Officer', 'Payroll Officer'] %}
                 <li class="sidebar-item">
                     <a href="{{ url_for('employees.directory') }}" class="sidebar-link {% if request.endpoint.startswith('employees') %}active{% endif %}">
-                        <i class="fas fa-address-book"></i>
-                        <span>Employee Directory</span>
-                    </a>
-                </li>
-                
-                {% if current_user.role in ['Admin', 'HR Officer'] %}
-                <li class="sidebar-item">
-                    <a href="{{ url_for('employees.list') }}" class="sidebar-link {% if request.endpoint == 'employees.list' %}active{% endif %}">
                         <i class="fas fa-users"></i>
-                        <span>Employee Management</span>
+                        <span>Employees</span>
                     </a>
                 </li>
                 {% endif %}
@@ -139,14 +135,7 @@
                 </li>
                 {% endif %}
                 
-                {% if current_user.role == 'Admin' %}
-                <li class="sidebar-item">
-                    <a href="{{ url_for('auth.register') }}" class="sidebar-link {% if request.endpoint == 'auth.register' %}active{% endif %}">
-                        <i class="fas fa-user-plus"></i>
-                        <span>Register User</span>
-                    </a>
-                </li>
-                {% endif %}
+
             </ul>
         </aside>
         
