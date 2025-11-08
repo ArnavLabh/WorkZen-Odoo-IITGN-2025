@@ -13,19 +13,19 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    def get_locale():
-        """Locale selector function for Babel"""
-        # Check if locale is stored in session
-        if 'locale' in session:
-            return session['locale']
-        # Default to browser language or app default
-        return request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or app.config['BABEL_DEFAULT_LOCALE']
+    # def get_locale():
+    #     """Locale selector function for Babel"""
+    #     # Check if locale is stored in session
+    #     if 'locale' in session:
+    #         return session['locale']
+    #     # Default to browser language or app default
+    #     return request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or app.config['BABEL_DEFAULT_LOCALE']
     
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
-    babel = Babel(app, locale_selector=get_locale)
+    #babel = Babel(app, locale_selector=get_locale)
     
     # For serverless environments, we don't test the connection on startup
     # Connections will be established lazily on first request
@@ -46,9 +46,9 @@ def create_app(config_class=Config):
     babel.init_app(app)
     
     # Store locale in g for templates
-    @app.before_request
-    def before_request():
-        g.locale = str(get_locale())
+    # @app.before_request
+    # def before_request():
+    #     g.locale = str(get_locale())
     
     # User loader for Flask-Login
     from app.models import User
