@@ -2,37 +2,35 @@ from flask import Flask, request, g, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_migrate import Migrate
-from flask_babel import Babel, get_locale
+from flask_babel import Babel
 from config import Config
 
 db = SQLAlchemy()
 login_manager = LoginManager()
 migrate = Migrate()
-babel = Babel()
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Initialize extensions
-    db.init_app(app)
-    login_manager.init_app(app)
-    migrate.init_app(app, db)
-    babel.init_app(app)
-    
-    # Configure login manager
-    login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
-    login_manager.login_message_category = 'info'
-    
-    # Babel locale selector
-    @babel.localeselector
     def get_locale():
+        """Locale selector function for Babel"""
         # Check if locale is stored in session
         if 'locale' in session:
             return session['locale']
         # Default to browser language or app default
         return request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or app.config['BABEL_DEFAULT_LOCALE']
+    
+    # Initialize extensions
+    db.init_app(app)
+    login_manager.init_app(app)
+    migrate.init_app(app, db)
+    babel = Babel(app, locale_selector=get_locale)
+    
+    # Configure login manager
+    login_manager.login_view = 'auth.login'
+    login_manager.login_message = 'Please log in to access this page.'
+    login_manager.login_message_category = 'info'
     
     # Store locale in g for templates
     @app.before_request
