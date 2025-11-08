@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Management - WorkZen{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-calendar-check"></i> Attendance Management
+        </h1>
+        <p class="text-muted" style="margin: 0; font-size: 0.875rem;">
+            <i class="fas fa-info-circle"></i> View attendance records for all employees
+        </p>
+    </div>
+    
+    <!-- Date Navigation and Search -->
+    <div class="search-filter-bar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <a href="{{ url_for('admin_attendance_route', date=prev_date.strftime('%Y-%m-%d')) }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            
+            <form method="GET" action="{{ url_for('admin_attendance_route') }}" style="display: flex; align-items: center; gap: 0.5rem;">
+                <input type="date" name="date" class="form-control" value="{{ filter_date.strftime('%Y-%m-%d') }}" onchange="this.form.submit()" style="max-width: 180px;">
+            </form>
+            
+            <a href="{{ url_for('admin_attendance_route', date=next_date.strftime('%Y-%m-%d')) }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </div>
+        
+        <form method="GET" action="{{ url_for('admin_attendance_route') }}" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="hidden" name="date" value="{{ filter_date.strftime('%Y-%m-%d') }}">
+            <input type="text" 
+                   name="search" 
+                   class="form-control" 
+                   placeholder="Search by employee name or ID..." 
+                   value="{{ search }}"
+                   style="min-width: 250px;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-search"></i> Search
+            </button>
+            {% if search %}
+            <a href="{{ url_for('admin_attendance_route', date=filter_date.strftime('%Y-%m-%d')) }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+    
+    <!-- Attendance Table -->
+    <div class="table-container">
+        <table class="table" id="data-table">
+            <thead>
+                <tr>
+                    <th>Employee Name</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Work Hours</th>
+                    <th>Extra Hours</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for attendance in attendances %}
+                <tr>
+                    <td>
+                        <strong>{{ attendance.user.name }}</strong><br>
+                        <small class="text-muted">{{ attendance.user.employee_id }}</small>
+                    </td>
+                    <td>{{ attendance.check_in.strftime('%H:%M') if attendance.check_in else '-' }}</td>
+                    <td>{{ attendance.check_out.strftime('%H:%M') if attendance.check_out else '-' }}</td>
+                    <td>{{ "%.1f"|format(attendance.working_hours) }} hrs</td>
+                    <td>
+                        {% if attendance.extra_hours > 0 %}
+                            <span style="color: #10b981; font-weight: 600;">{{ "%.1f"|format(attendance.extra_hours) }} hrs</span>
+                        {% else %}
+                            <span style="color: #6b7280;">-</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center">
+                        {% if search %}
+                            No attendance records found for "{{ search }}" on {{ filter_date.strftime('%B %d, %Y') }}
+                        {% else %}
+                            No attendance records found for {{ filter_date.strftime('%B %d, %Y') }}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

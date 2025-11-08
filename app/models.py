@@ -78,6 +78,7 @@ class Attendance(db.Model):
     check_out = db.Column(db.Time)
     status = db.Column(db.String(20), nullable=False, default='Absent')  # Present, Absent, Half Day
     working_hours = db.Column(db.Float, default=0.0)
+    extra_hours = db.Column(db.Float, default=0.0)  # Hours worked beyond standard 8 hours
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -86,6 +87,7 @@ class Attendance(db.Model):
     
     __table_args__ = (db.UniqueConstraint('user_id', 'date', name='unique_user_date'),)
     
+<<<<<<< HEAD
     def calculate_working_hours(self):
         """Calculate total working hours from all check-in/check-out logs"""
         total_hours = 0.0
@@ -114,6 +116,31 @@ class Attendance(db.Model):
                 i += 1
         
         self.working_hours = total_hours
+=======
+    def calculate_working_hours(self, standard_hours=8.0):
+        """Calculate working hours and extra hours (hours beyond standard)"""
+        if self.check_in and self.check_out:
+            from datetime import datetime, date
+            check_in_dt = datetime.combine(date.today(), self.check_in)
+            check_out_dt = datetime.combine(date.today(), self.check_out)
+            delta = check_out_dt - check_in_dt
+            total_hours = delta.total_seconds() / 3600.0
+            self.working_hours = total_hours
+            # Calculate extra hours (hours worked beyond standard 8 hours)
+            # Use setattr to handle cases where column might not exist yet
+            try:
+                self.extra_hours = max(0.0, total_hours - standard_hours)
+            except AttributeError:
+                # Column doesn't exist in database yet - set it as attribute
+                # This will be persisted when the column is added
+                object.__setattr__(self, 'extra_hours', max(0.0, total_hours - standard_hours))
+        else:
+            self.working_hours = 0.0
+            try:
+                self.extra_hours = 0.0
+            except AttributeError:
+                object.__setattr__(self, 'extra_hours', 0.0)
+>>>>>>> 619415b8c502b1d1ffd0bdeafb5c6e50d9267344
         return self.working_hours
     
     def __repr__(self):
