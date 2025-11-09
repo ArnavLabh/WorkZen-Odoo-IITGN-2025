@@ -144,6 +144,14 @@
                         </button>
                     </form>
                 </div>
+                {% elif current_user.role == 'Employee' and leave.status == 'Pending' and leave.user_id == current_user.id %}
+                <div class="leave-actions">
+                    <form method="POST" action="{{ url_for('leave.delete', leave_id=leave.id) }}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this leave request?')">
+                        <button type="submit" class="btn-delete">
+                            <i class="fas fa-trash"></i> Delete Request
+                        </button>
+                    </form>
+                </div>
                 {% endif %}
             </div>
             {% else %}
@@ -586,7 +594,7 @@
     border-top: 1px solid #f1f5f9;
 }
 
-.btn-approve, .btn-reject {
+.btn-approve, .btn-reject, .btn-delete {
     flex: 1;
     padding: 0.75rem;
     border: none;
@@ -610,7 +618,12 @@
     color: white;
 }
 
-.btn-approve:hover, .btn-reject:hover {
+.btn-delete {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-approve:hover, .btn-reject:hover, .btn-delete:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }

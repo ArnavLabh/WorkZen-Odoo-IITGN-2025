@@ -79,12 +79,8 @@
 </div>
 
 <script>
-// Set minimum date to today for both start and end date
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('start_date').setAttribute('min', today);
-    document.getElementById('end_date').setAttribute('min', today);
-});
+// Calendar is completely free - no date restrictions
+// Only validation is overlap check on backend
 
 function calculateDays() {
     const startDate = document.getElementById('start_date').value;

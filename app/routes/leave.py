@@ -64,16 +64,31 @@ def apply():
                 start = datetime.strptime(start_date, '%Y-%m-%d').date()
                 end = datetime.strptime(end_date, '%Y-%m-%d').date()
                 
-                # Allow today or future dates
-                if start < date.today():
-                    errors.append('Start date must be today or in the future')
-                
                 if end < start:
                     errors.append('End date must be on or after start date')
                 
                 is_valid, message = validate_date_range(start, end)
                 if not is_valid:
                     errors.append(message)
+                
+                # Check for overlapping leaves
+                overlapping_leaves = Leave.query.filter(
+                    Leave.user_id == current_user.id,
+                    Leave.status.in_(['Pending', 'Approved']),
+                    or_(
+                        and_(Leave.start_date <= start, Leave.end_date >= start),
+                        and_(Leave.start_date <= end, Leave.end_date >= end),
+                        and_(Leave.start_date >= start, Leave.end_date <= end)
+                    )
+                ).all()
+                
+                if overlapping_leaves:
+                    overlap_details = ', '.join([
+                        f"{leave.leave_type} ({leave.start_date.strftime('%Y-%m-%d')} to {leave.end_date.strftime('%Y-%m-%d')}) - {leave.status}"
+                        for leave in overlapping_leaves
+                    ])
+                    errors.append(f'You already have leave(s) for overlapping dates: {overlap_details}')
+                    
             except ValueError:
                 errors.append('Invalid date format')
         
@@ -132,6 +147,31 @@ def reject(leave_id):
     
     db.session.commit()
     flash('Leave request rejected', 'info')
+    return redirect(url_for('leave.list'))
+
+@bp.route('/<int:leave_id>/delete', methods=['POST'])
+@login_required
+@role_required(['Employee'])
+def delete(leave_id):
+    # Employees can only delete their own pending leave requests
+    leave = Leave.query.get_or_404(leave_id)
+    
+    # Check if leave belongs to current user
+    if leave.user_id != current_user.id:
+        abort(403)
+    
+    # Only allow deletion of pending leaves
+    if leave.status != 'Pending':
+        flash('You can only delete pending leave requests', 'danger')
+        return redirect(url_for('leave.list'))
+    
+    leave_type = leave.leave_type
+    start_date = leave.start_date.strftime('%Y-%m-%d')
+    
+    db.session.delete(leave)
+    db.session.commit()
+    
+    flash(f'{leave_type} request for {start_date} deleted successfully!', 'success')
     return redirect(url_for('leave.list'))
 
 @bp.route('/<int:leave_id>/view')
