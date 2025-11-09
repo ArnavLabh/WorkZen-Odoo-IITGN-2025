@@ -538,7 +538,7 @@ def checkout():
 
 @bp.route("/logs/<int:attendance_id>")
 @login_required
-@role_required(["Employee"])
+@employee_or_above_required
 def get_logs(attendance_id):
     """
     Get all check-in/check-out logs for a specific attendance record
@@ -546,10 +546,12 @@ def get_logs(attendance_id):
     """
     from app.models import AttendanceLog
 
-    # Get attendance record and verify it belongs to current user
+    # Get attendance record and verify it belongs to current user (for employees)
     attendance = Attendance.query.get_or_404(attendance_id)
 
-    if attendance.user_id != current_user.id:
+    # Employees can only view their own logs
+    # Admin, HR, Payroll can view any logs
+    if current_user.role == 'Employee' and attendance.user_id != current_user.id:
         abort(403)
 
     # Get all logs for this attendance
