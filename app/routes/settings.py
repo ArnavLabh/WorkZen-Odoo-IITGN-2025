@@ -21,10 +21,23 @@ def profile():
     from app.models import PayrollSettings
     payroll_settings = PayrollSettings.query.filter_by(user_id=user.id).first()
     
+    # Get potential managers based on role hierarchy
+    # Employee < HR Officer < Payroll Officer < Admin
+    role_hierarchy = {
+        'Employee': ['HR Officer', 'Payroll Officer', 'Admin'],
+        'HR Officer': ['Payroll Officer', 'Admin'],
+        'Payroll Officer': ['Admin'],
+        'Admin': []  # Admins have no superiors
+    }
+    
+    allowed_manager_roles = role_hierarchy.get(user.role, [])
+    potential_managers = User.query.filter(User.role.in_(allowed_manager_roles)).order_by(User.name).all() if allowed_manager_roles else []
+    
     return render_template('settings/profile.html', 
                          user=user, 
                          manager=manager,
-                         payroll_settings=payroll_settings)
+                         payroll_settings=payroll_settings,
+                         potential_managers=potential_managers)
 
 @bp.route('/profile/update-private-info', methods=['POST'])
 @login_required
@@ -32,6 +45,10 @@ def update_private_info():
     """Update private information"""
     user = current_user
     
+    # Get all form fields
+    company = request.form.get('company', '').strip()
+    department = request.form.get('department', '').strip()
+    manager_id = request.form.get('manager_id', '').strip()
     date_of_birth = request.form.get('date_of_birth', '').strip()
     nationality = request.form.get('nationality', '').strip()
     personal_email = request.form.get('personal_email', '').strip()
@@ -49,10 +66,33 @@ def update_private_info():
         except ValueError:
             errors.append('Invalid date of birth format')
     
+    # Validate manager selection based on role hierarchy
+    if manager_id:
+        try:
+            manager_id_int = int(manager_id)
+            potential_manager = User.query.get(manager_id_int)
+            if potential_manager:
+                # Check if the selected manager is valid based on role hierarchy
+                role_hierarchy = {
+                    'Employee': ['HR Officer', 'Payroll Officer', 'Admin'],
+                    'HR Officer': ['Payroll Officer', 'Admin'],
+                    'Payroll Officer': ['Admin'],
+                    'Admin': []
+                }
+                allowed_roles = role_hierarchy.get(user.role, [])
+                if potential_manager.role not in allowed_roles:
+                    errors.append('Invalid manager selection for your role')
+        except (ValueError, TypeError):
+            errors.append('Invalid manager selection')
+    
     if errors:
         for error in errors:
             flash(error, 'danger')
     else:
+        # Update all fields
+        user.company = company if company else None
+        user.department = department if department else None
+        user.manager_id = int(manager_id) if manager_id else None
         user.nationality = nationality if nationality else None
         user.personal_email = personal_email if personal_email else None
         user.gender = gender if gender else None
@@ -61,7 +101,7 @@ def update_private_info():
         user.updated_at = datetime.utcnow()
         
         db.session.commit()
-        flash('Private information updated successfully!', 'success')
+        flash('Personal information updated successfully!', 'success')
     
     return redirect(url_for('settings.profile'))
 

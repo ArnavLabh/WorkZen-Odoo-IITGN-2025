@@ -203,6 +203,13 @@ def register():
             # Auto-generate password
             password = generate_random_password(12)
             
+            # Get company name from settings
+            from app.models import CompanySettings
+            company_name = CompanySettings.get_setting('company_name', 'WorkZen')
+            
+            # Auto-assign manager as the current user (Admin/HR Officer who is creating the employee)
+            manager_id = current_user.id
+            
             user = User(
                 employee_id=employee_id,
                 name=name,
@@ -210,7 +217,9 @@ def register():
                 role=role,
                 date_of_joining=joining_date,
                 contact_number=contact_number if contact_number else None,
-                address=address if address else None
+                address=address if address else None,
+                company=company_name,  # Auto-assign company name
+                manager_id=manager_id  # Auto-assign manager as creator
             )
             user.set_password(password)
             

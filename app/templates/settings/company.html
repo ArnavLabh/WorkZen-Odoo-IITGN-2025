@@ -55,8 +55,13 @@
                 </small>
             </div>
             
-            <div class="alert alert-info mb-4">
-                <h6 class="mb-2"><i class="fas fa-info-circle me-2"></i>How It Works</h6>
+            <div class="alert alert-info mb-4" id="company-settings-info-alert" style="position: relative;">
+                <button type="button" onclick="document.getElementById('company-settings-info-alert').style.display='none'" 
+                        style="position: absolute; top: 0.75rem; right: 0.75rem; background: none; border: none; font-size: 1.25rem; color: #0c5460; cursor: pointer; opacity: 0.7; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;"
+                        title="Dismiss">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h6 class="mb-2" style="padding-right: 2rem;"><i class="fas fa-info-circle me-2"></i>How It Works</h6>
                 <p class="mb-2">The system automatically calculates attendance status based on total working hours:</p>
                 <ul class="mb-0">
                     <li><strong>Full Day (Present):</strong> ≥75% of required hours (e.g., 6+ hours for 8-hour day)</li>

@@ -9,10 +9,13 @@
             <i class="fas fa-file-invoice-dollar"></i> Payslip
         </h1>
         <div class="d-flex gap-2">
+            <a href="{{ url_for('payroll.download_pdf', payroll_id=payroll.id) }}" class="btn btn-success">
+                <i class="fas fa-download"></i> Download PDF
+            </a>
             {% if current_user.role in ['Admin', 'Payroll Officer'] and payroll.status == 'Unpaid' %}
             <form method="POST" action="{{ url_for('payroll.mark_paid', payroll_id=payroll.id) }}"
                 style="display: inline;">
-                <button type="submit" class="btn btn-success">
+                <button type="submit" class="btn btn-primary">
                     <i class="fas fa-check"></i> Mark as Paid
                 </button>
             </form>

@@ -19,7 +19,7 @@
             </div>
             <div class="profile-info-section">
                 <h1 class="profile-name">{{ user.name }}</h1>
-                <p class="profile-role">{{ user.job_position or 'Employee' }}</p>
+                <p class="profile-role">{{ user.role }}</p>
                 <div class="profile-meta">
                     <span class="meta-item">
                         <i class="fas fa-id-badge"></i> {{ user.employee_id }}
@@ -61,15 +61,6 @@
                 <div class="stat-content">
                     <span class="stat-label">Manager</span>
                     <span class="stat-value">{{ manager.name if manager else 'Not assigned' }}</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-                    <i class="fas fa-map-marker-alt"></i>
-                </div>
-                <div class="stat-content">
-                    <span class="stat-label">Location</span>
-                    <span class="stat-value">{{ user.location or 'Not set' }}</span>
                 </div>
             </div>
         </div>
@@ -158,6 +149,51 @@
                 <form method="POST" action="{{ url_for('settings.update_private_info') }}" class="profile-form">
                     <div class="form-row">
                         <div class="form-group">
+                            <label for="company">Company</label>
+                            <input type="text" id="company" name="company" class="form-input"
+                                value="{{ user.company or '' }}" placeholder="Enter company name">
+                        </div>
+                        <div class="form-group">
+                            <label for="department">Department</label>
+                            <select id="department" name="department" class="form-input">
+                                <option value="">Select Department</option>
+                                <option value="Engineering" {% if user.department=='Engineering' %}selected{% endif %}>Engineering</option>
+                                <option value="Human Resources" {% if user.department=='Human Resources' %}selected{% endif %}>Human Resources</option>
+                                <option value="Finance" {% if user.department=='Finance' %}selected{% endif %}>Finance</option>
+                                <option value="Marketing" {% if user.department=='Marketing' %}selected{% endif %}>Marketing</option>
+                                <option value="Sales" {% if user.department=='Sales' %}selected{% endif %}>Sales</option>
+                                <option value="Operations" {% if user.department=='Operations' %}selected{% endif %}>Operations</option>
+                                <option value="IT" {% if user.department=='IT' %}selected{% endif %}>IT</option>
+                                <option value="Customer Support" {% if user.department=='Customer Support' %}selected{% endif %}>Customer Support</option>
+                                <option value="Product" {% if user.department=='Product' %}selected{% endif %}>Product</option>
+                                <option value="Design" {% if user.department=='Design' %}selected{% endif %}>Design</option>
+                                <option value="Legal" {% if user.department=='Legal' %}selected{% endif %}>Legal</option>
+                                <option value="Administration" {% if user.department=='Administration' %}selected{% endif %}>Administration</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="manager_id">Manager</label>
+                            <select id="manager_id" name="manager_id" class="form-input">
+                                <option value="">Select Manager</option>
+                                {% for potential_manager in potential_managers %}
+                                <option value="{{ potential_manager.id }}" {% if user.manager_id == potential_manager.id %}selected{% endif %}>
+                                    {{ potential_manager.name }} ({{ potential_manager.role }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="date_of_joining">Date of Joining</label>
+                            <input type="date" id="date_of_joining" name="date_of_joining" class="form-input"
+                                value="{{ user.date_of_joining.strftime('%Y-%m-%d') }}" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
                             <label for="date_of_birth">Date of Birth</label>
                             <input type="date" id="date_of_birth" name="date_of_birth" class="form-input"
                                 value="{{ user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '' }}">
@@ -202,9 +238,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="date_of_joining">Date of Joining</label>
-                            <input type="date" id="date_of_joining" name="date_of_joining" class="form-input"
-                                value="{{ user.date_of_joining.strftime('%Y-%m-%d') }}" readonly>
+                            <!-- Empty space for grid alignment -->
                         </div>
                     </div>
 

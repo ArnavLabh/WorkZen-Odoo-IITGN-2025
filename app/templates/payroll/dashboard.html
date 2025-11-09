@@ -20,8 +20,13 @@
     
     <!-- Warnings Section -->
     {% if employees_without_bank > 0 or employees_without_manager > 0 %}
-    <div class="alert alert-warning" style="margin: 1.5rem; border-radius: 8px;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+    <div class="alert alert-warning" id="payroll-warning-alert" style="margin: 1.5rem; border-radius: 8px; position: relative;">
+        <button type="button" onclick="document.getElementById('payroll-warning-alert').style.display='none'" 
+                style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.25rem; color: #92400e; cursor: pointer; opacity: 0.7; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;"
+                title="Dismiss">
+            <i class="fas fa-times"></i>
+        </button>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; padding-right: 2rem;">
             <i class="fas fa-exclamation-triangle"></i>
             <strong>Attention Required</strong>
         </div>

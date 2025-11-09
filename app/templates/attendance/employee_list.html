@@ -150,7 +150,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
-                    <i class="fas fa-history"></i> Attendance Logs - <span id="modal-date"></span>
+                    <i class="fas fa-history"></i> Check-In/Check-Out Logs - <span id="modal-date"></span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -172,8 +172,8 @@
         // Update modal title
         document.getElementById('modal-date').textContent = date;
 
-        // Show loading in modal
-        document.getElementById('modal-logs-content').innerHTML = `
+        // Show loading in both modal and main container
+        const loadingHtml = `
         <div class="text-center py-4">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -181,6 +181,9 @@
             <p class="text-muted mt-2">Loading logs...</p>
         </div>
     `;
+
+        document.getElementById('modal-logs-content').innerHTML = loadingHtml;
+        document.getElementById('logs-container').innerHTML = loadingHtml;
 
         // Show modal immediately
         const modal = new bootstrap.Modal(document.getElementById('logsModal'));
@@ -235,14 +238,17 @@
                     html = '<p class="text-muted text-center py-4">No logs found for this date.</p>';
                 }
 
-                // Update modal content only (not the main container)
+                // Update both modal content AND main container
                 document.getElementById('modal-logs-content').innerHTML = html;
+                document.getElementById('logs-container').innerHTML = html;
             })
             .catch(error => {
                 console.error('Error fetching logs:', error);
-                // Only update modal content on error, not the main container
-                document.getElementById('modal-logs-content').innerHTML =
-                    '<p class="text-danger text-center">Error loading logs. Please try again.</p>';
+                const errorHtml = '<p class="text-danger text-center">Error loading logs. Please try again.</p>';
+
+                // Update both modal and main container on error
+                document.getElementById('modal-logs-content').innerHTML = errorHtml;
+                document.getElementById('logs-container').innerHTML = errorHtml;
 
                 // Show modal with error
                 const modal = new bootstrap.Modal(document.getElementById('logsModal'));

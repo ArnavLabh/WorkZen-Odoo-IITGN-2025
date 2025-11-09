@@ -145,10 +145,10 @@ def list():
 
 @bp.route("/create", methods=["GET", "POST"])
 @login_required
-@role_required(["Admin"])
+@role_required(["Admin", "HR Officer"])
 def create():
     """
-    Create attendance record - Admin only
+    Create attendance record - Admin and HR Officer
     Allows manual creation of attendance data
     """
     if request.method == "POST":
@@ -256,10 +256,10 @@ def create():
 
 @bp.route("/<int:attendance_id>/edit", methods=["GET", "POST"])
 @login_required
-@role_required(["Admin"])
+@role_required(["Admin", "HR Officer"])
 def edit(attendance_id):
     """
-    Edit attendance record - Admin only
+    Edit attendance record - Admin and HR Officer
     Allows manual correction of attendance data
     """
     attendance = Attendance.query.get_or_404(attendance_id)
@@ -341,10 +341,10 @@ def edit(attendance_id):
 
 @bp.route("/<int:attendance_id>/delete", methods=["POST"])
 @login_required
-@role_required(["Admin"])
+@role_required(["Admin", "HR Officer"])
 def delete(attendance_id):
     """
-    Delete attendance record - Admin only
+    Delete attendance record - Admin and HR Officer
     """
     attendance = Attendance.query.get_or_404(attendance_id)
     user_name = attendance.user.name

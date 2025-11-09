@@ -39,9 +39,14 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-eye"></i> View Payslip
-                        </a>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('payroll.download_pdf', payroll_id=payroll.id) }}" class="btn btn-sm btn-outline-success" title="Download PDF">
+                                <i class="fas fa-download"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% else %}
