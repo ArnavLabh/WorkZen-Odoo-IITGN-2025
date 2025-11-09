@@ -37,9 +37,9 @@
     </div>
     
     <!-- Card Grid View for All Roles -->
-    <div class="row g-4 p-3">
+    <div class="row g-4 p-4">
         {% for employee in employees %}
-        <div class="col-md-6 col-lg-4 col-xl-3">
+        <div class="col-md-6 col-lg-4 col-xl-3" style="padding: 0.75rem;">
             <div class="card shadow-sm h-100 employee-card-hover" style="cursor: pointer; transition: all 0.2s ease;" onclick="window.location.href='{{ url_for('employees.view', user_id=employee.id) }}'">
                 <div class="card-body">
                     <!-- Status Indicator -->

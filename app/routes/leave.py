@@ -5,7 +5,7 @@ from app.models import Leave, User
 from app.utils.decorators import admin_required, hr_required, payroll_required, employee_or_above_required, role_required
 from app.utils.validators import validate_date_range
 from datetime import datetime, date
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 bp = Blueprint('leave', __name__)
 
