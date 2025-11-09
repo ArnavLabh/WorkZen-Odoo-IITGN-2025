@@ -30,13 +30,25 @@
             </a>
         </div>
         <div class="header-right">
-            <!-- Check-In/Check-Out Button -->
+            <!-- Check-In/Check-Out Button & Status Indicator -->
             {% if current_user.role == 'Employee' %}
-            <div style="margin-right: 1rem;" id="attendance-button-container">
-                <!-- Loading state -->
-                <button class="btn btn-secondary btn-sm" disabled>
-                    <i class="fas fa-spinner fa-spin"></i> Loading...
-                </button>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-right: 1rem;">
+                <!-- Attendance Button -->
+                <div id="attendance-button-container">
+                    <!-- Loading state -->
+                    <button class="btn btn-secondary btn-sm" disabled>
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </button>
+                </div>
+                
+                <!-- Status Indicator Circle -->
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <div id="attendance-status-indicator" 
+                         style="width: 16px; height: 16px; border-radius: 50%; background-color: #ef4444; transition: background-color 0.3s ease;"
+                         title="Not Checked In">
+                    </div>
+                    <span id="attendance-time-display" style="font-size: 0.875rem; color: #6b7280; white-space: nowrap;"></span>
+                </div>
             </div>
             {% endif %}
             
@@ -198,12 +210,15 @@
                 .then(response => response.json())
                 .then(data => {
                     const container = document.getElementById('attendance-button-container');
+                    const indicator = document.getElementById('attendance-status-indicator');
+                    const timeDisplay = document.getElementById('attendance-time-display');
+                    
                     if (!container) return;
                     
                     let buttonHtml = '';
                     
                     if (data.show_button === 'checkin') {
-                        // Show Check In button (red)
+                        // Show Check In button
                         buttonHtml = `
                             <form method="POST" action="{{ url_for('attendance.checkin') }}" style="margin: 0;" onsubmit="handleAttendanceSubmit(event, this)">
                                 <button type="submit" class="btn btn-danger btn-sm" style="background-color: #ef4444; border-color: #ef4444;">
@@ -211,8 +226,19 @@
                                 </button>
                             </form>
                         `;
+                        
+                        // Update status indicator to RED
+                        if (indicator) {
+                            indicator.style.backgroundColor = '#ef4444';
+                            indicator.title = 'Not Checked In';
+                        }
+                        
+                        // Clear time display
+                        if (timeDisplay) {
+                            timeDisplay.textContent = '';
+                        }
                     } else {
-                        // Show Check Out button (green)
+                        // Show Check Out button
                         buttonHtml = `
                             <form method="POST" action="{{ url_for('attendance.checkout') }}" style="margin: 0;" onsubmit="handleAttendanceSubmit(event, this)">
                                 <button type="submit" class="btn btn-success btn-sm" style="background-color: #10b981; border-color: #10b981;">
@@ -220,6 +246,17 @@
                                 </button>
                             </form>
                         `;
+                        
+                        // Update status indicator to GREEN
+                        if (indicator) {
+                            indicator.style.backgroundColor = '#10b981';
+                            indicator.title = 'Checked In';
+                        }
+                        
+                        // Show check-in time
+                        if (timeDisplay && data.check_in_time) {
+                            timeDisplay.textContent = `Since ${data.check_in_time}`;
+                        }
                     }
                     
                     container.innerHTML = buttonHtml;

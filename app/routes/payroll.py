@@ -655,9 +655,7 @@ def salary_structure(user_id):
                 db.session.rollback()
             except:
                 pass
-            # Don't try to create table here - it causes transaction issues
-            # Just show error message
-            flash(f'Salary components table not found. Please run: python create_tables.py to create the table.', 'danger')
+            # Silently use default components if table doesn't exist
             components = []
     if not components:
         # Create default components for display

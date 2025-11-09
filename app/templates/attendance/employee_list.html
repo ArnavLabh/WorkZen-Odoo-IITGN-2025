@@ -12,54 +12,61 @@
             <i class="fas fa-info-circle"></i> View your monthly attendance records
         </p>
     </div>
-    
+
     <!-- Month Navigation -->
-    <div class="search-filter-bar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <div class="search-filter-bar"
+        style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 0.5rem;">
             <a href="{{ url_for('attendance.list', month=prev_month, year=prev_year) }}" class="btn btn-secondary">
                 <i class="fas fa-chevron-left"></i>
             </a>
-            
-            <form method="GET" action="{{ url_for('attendance.list') }}" style="display: flex; align-items: center; gap: 0.5rem;">
+
+            <form method="GET" action="{{ url_for('attendance.list') }}"
+                style="display: flex; align-items: center; gap: 0.5rem;">
                 <select name="month" class="form-control" style="max-width: 150px;" onchange="this.form.submit()">
                     {% for i in range(1, 13) %}
-                    <option value="{{ i }}" {% if month == i %}selected{% endif %}>
-                        {{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][i] }}
+                    <option value="{{ i }}" {% if month==i %}selected{% endif %}>
+                        {{ ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
+                        'October', 'November', 'December'][i] }}
                     </option>
                     {% endfor %}
                 </select>
                 <select name="year" class="form-control" style="max-width: 100px;" onchange="this.form.submit()">
                     {% for y in range(2020, 2031) %}
-                    <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}</option>
+                    <option value="{{ y }}" {% if year==y %}selected{% endif %}>{{ y }}</option>
                     {% endfor %}
                 </select>
             </form>
-            
+
             <a href="{{ url_for('attendance.list', month=next_month, year=next_year) }}" class="btn btn-secondary">
                 <i class="fas fa-chevron-right"></i>
             </a>
         </div>
     </div>
-    
+
     <!-- Summary Counters -->
-    <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
-        <div class="stat-card" style="background: #f0f9ff; padding: 1rem; border-radius: 8px; border: 1px solid #e0e7ff;">
+    <div class="stats-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+        <div class="stat-card"
+            style="background: #f0f9ff; padding: 1rem; border-radius: 8px; border: 1px solid #e0e7ff;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <i class="fas fa-calendar-check" style="color: #10b981; font-size: 1.5rem;"></i>
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Days Present</h3>
             </div>
             <p style="margin: 0; font-size: 2rem; font-weight: 700; color: #10b981;">{{ days_present }}</p>
         </div>
-        
-        <div class="stat-card" style="background: #fef3c7; padding: 1rem; border-radius: 8px; border: 1px solid #fde68a;">
+
+        <div class="stat-card"
+            style="background: #fef3c7; padding: 1rem; border-radius: 8px; border: 1px solid #fde68a;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <i class="fas fa-calendar-times" style="color: #f59e0b; font-size: 1.5rem;"></i>
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Leave Count</h3>
             </div>
             <p style="margin: 0; font-size: 2rem; font-weight: 700; color: #f59e0b;">{{ leave_count }}</p>
         </div>
-        
-        <div class="stat-card" style="background: #e0e7ff; padding: 1rem; border-radius: 8px; border: 1px solid #c7d2fe;">
+
+        <div class="stat-card"
+            style="background: #e0e7ff; padding: 1rem; border-radius: 8px; border: 1px solid #c7d2fe;">
             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                 <i class="fas fa-business-time" style="color: #6366f1; font-size: 1.5rem;"></i>
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Total Working Days</h3>
@@ -67,7 +74,7 @@
             <p style="margin: 0; font-size: 2rem; font-weight: 700; color: #6366f1;">{{ total_working_days }}</p>
         </div>
     </div>
-    
+
     <!-- Attendance Summary Table -->
     <div class="table-container">
         <h5 style="margin: 1.5rem 0 1rem 0; font-weight: 600;">
@@ -89,25 +96,27 @@
                     <td>{{ attendance.date.strftime('%Y-%m-%d') }}</td>
                     <td>
                         {% if attendance.status == 'Present' %}
-                            <span class="badge bg-success">Present</span>
+                        <span class="badge bg-success">Present</span>
                         {% elif attendance.status == 'Absent' %}
-                            <span class="badge bg-danger">Absent</span>
+                        <span class="badge bg-danger">Absent</span>
                         {% elif attendance.status == 'Half Day' %}
-                            <span class="badge bg-warning">Half Day</span>
+                        <span class="badge bg-warning">Half Day</span>
                         {% else %}
-                            <span class="badge bg-secondary">{{ attendance.status }}</span>
+                        <span class="badge bg-secondary">{{ attendance.status }}</span>
                         {% endif %}
                     </td>
                     <td>{{ "%.1f"|format(attendance.working_hours) }} hrs</td>
                     <td>
                         {% if attendance.extra_hours > 0 %}
-                            <span style="color: #10b981; font-weight: 600;">{{ "%.1f"|format(attendance.extra_hours) }} hrs</span>
+                        <span style="color: #10b981; font-weight: 600;">{{ "%.1f"|format(attendance.extra_hours) }}
+                            hrs</span>
                         {% else %}
-                            <span style="color: #6b7280;">-</span>
+                        <span style="color: #6b7280;">-</span>
                         {% endif %}
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewLogs({{ attendance.id }}, '{{ attendance.date.strftime('%Y-%m-%d') }}')">
+                        <button class="btn btn-sm btn-outline-primary"
+                            onclick="viewLogs({{ attendance.id }}, '{{ attendance.date.strftime('%Y-%m-%d') }}')">
                             <i class="fas fa-list"></i> View Logs
                         </button>
                     </td>
@@ -120,7 +129,7 @@
             </tbody>
         </table>
     </div>
-    
+
     <!-- Attendance Logs Table -->
     <div class="table-container" style="margin-top: 2rem;">
         <h5 style="margin: 1.5rem 0 1rem 0; font-weight: 600;">
@@ -128,7 +137,8 @@
         </h5>
         <div id="logs-container">
             <p class="text-muted text-center" style="padding: 2rem;">
-                <i class="fas fa-info-circle"></i> Click "View Logs" on any date above to see detailed check-in/check-out times
+                <i class="fas fa-info-circle"></i> Click "View Logs" on any date above to see detailed
+                check-in/check-out times
             </p>
         </div>
     </div>
@@ -158,12 +168,12 @@
 </div>
 
 <script>
-function viewLogs(attendanceId, date) {
-    // Update modal title
-    document.getElementById('modal-date').textContent = date;
-    
-    // Show loading in modal
-    document.getElementById('modal-logs-content').innerHTML = `
+    function viewLogs(attendanceId, date) {
+        // Update modal title
+        document.getElementById('modal-date').textContent = date;
+
+        // Show loading in modal
+        document.getElementById('modal-logs-content').innerHTML = `
         <div class="text-center py-4">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
@@ -171,75 +181,74 @@ function viewLogs(attendanceId, date) {
             <p class="text-muted mt-2">Loading logs...</p>
         </div>
     `;
-    
-    // Show modal immediately
-    const modal = new bootstrap.Modal(document.getElementById('logsModal'));
-    modal.show();
-    
-    // Fetch logs via AJAX
-    fetch(`/attendance/logs/${attendanceId}`)
-        .then(response => response.json())
-        .then(data => {
-            let html = '';
-            
-            if (data.logs && data.logs.length > 0) {
-                html = '<table class="table table-striped">';
-                html += '<thead><tr><th>#</th><th>Type</th><th>Time</th><th>Duration</th></tr></thead>';
-                html += '<tbody>';
-                
-                let checkInTime = null;
-                let sessionNum = 0;
-                
-                data.logs.forEach((log, index) => {
-                    if (log.log_type === 'check_in') {
-                        sessionNum++;
-                        checkInTime = log.timestamp;
-                        html += `<tr class="table-success">
+
+        // Show modal immediately
+        const modal = new bootstrap.Modal(document.getElementById('logsModal'));
+        modal.show();
+
+        // Fetch logs via AJAX
+        fetch(`/attendance/logs/${attendanceId}`)
+            .then(response => response.json())
+            .then(data => {
+                let html = '';
+
+                if (data.logs && data.logs.length > 0) {
+                    html = '<table class="table table-striped">';
+                    html += '<thead><tr><th>#</th><th>Type</th><th>Time</th><th>Duration</th></tr></thead>';
+                    html += '<tbody>';
+
+                    let checkInTime = null;
+                    let sessionNum = 0;
+
+                    data.logs.forEach((log, index) => {
+                        if (log.log_type === 'check_in') {
+                            sessionNum++;
+                            checkInTime = log.timestamp;
+                            html += `<tr class="table-success">
                             <td>${sessionNum}</td>
                             <td><i class="fas fa-sign-in-alt text-success"></i> Check In</td>
                             <td><strong>${log.timestamp}</strong></td>
                             <td>-</td>
                         </tr>`;
-                    } else if (log.log_type === 'check_out') {
-                        let duration = '-';
-                        if (checkInTime) {
-                            duration = log.duration || 'Calculating...';
-                        }
-                        html += `<tr class="table-warning">
+                        } else if (log.log_type === 'check_out') {
+                            let duration = '-';
+                            if (checkInTime) {
+                                duration = log.duration || 'Calculating...';
+                            }
+                            html += `<tr class="table-warning">
                             <td>${sessionNum}</td>
                             <td><i class="fas fa-sign-out-alt text-warning"></i> Check Out</td>
                             <td><strong>${log.timestamp}</strong></td>
                             <td><span class="badge bg-primary">${duration}</span></td>
                         </tr>`;
-                        checkInTime = null;
-                    }
-                });
-                
-                html += '</tbody></table>';
-                
-                // Add summary
-                html += `<div class="alert alert-info mt-3">
+                            checkInTime = null;
+                        }
+                    });
+
+                    html += '</tbody></table>';
+
+                    // Add summary
+                    html += `<div class="alert alert-info mt-3">
                     <strong><i class="fas fa-clock"></i> Total Working Hours:</strong> ${data.total_hours} hours
                 </div>`;
-            } else {
-                html = '<p class="text-muted text-center py-4">No logs found for this date.</p>';
-            }
-            
-            // Update modal content only (not the main container)
-            document.getElementById('modal-logs-content').innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Error fetching logs:', error);
-            // Only update modal content on error, not the main container
-            document.getElementById('modal-logs-content').innerHTML = 
-                '<p class="text-danger text-center">Error loading logs. Please try again.</p>';
-            
-            // Show modal with error
-            const modal = new bootstrap.Modal(document.getElementById('logsModal'));
-            modal.show();
-        });
-}
+                } else {
+                    html = '<p class="text-muted text-center py-4">No logs found for this date.</p>';
+                }
+
+                // Update modal content only (not the main container)
+                document.getElementById('modal-logs-content').innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Error fetching logs:', error);
+                // Only update modal content on error, not the main container
+                document.getElementById('modal-logs-content').innerHTML =
+                    '<p class="text-danger text-center">Error loading logs. Please try again.</p>';
+
+                // Show modal with error
+                const modal = new bootstrap.Modal(document.getElementById('logsModal'));
+                modal.show();
+            });
+    }
 </script>
 
 {% endblock %}
-

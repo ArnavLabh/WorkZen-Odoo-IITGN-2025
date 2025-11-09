@@ -64,8 +64,12 @@ def apply():
                 start = datetime.strptime(start_date, '%Y-%m-%d').date()
                 end = datetime.strptime(end_date, '%Y-%m-%d').date()
                 
+                # Allow today or future dates
                 if start < date.today():
-                    errors.append('Start date cannot be in the past')
+                    errors.append('Start date must be today or in the future')
+                
+                if end < start:
+                    errors.append('End date must be on or after start date')
                 
                 is_valid, message = validate_date_range(start, end)
                 if not is_valid:

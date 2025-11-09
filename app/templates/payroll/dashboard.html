@@ -1,302 +1,250 @@
 {% extends "base.html" %}
 
-{% block title %}Payroll Dashboard{% endblock %}
+{% block title %}Payroll Dashboard - WorkZen{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-2">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0 text-start">Payroll Dashboard</h2>
-            </div>
-            
-            <!-- Warnings Section -->
-            {% if employees_without_bank > 0 or employees_without_manager > 0 %}
-            <div class="alert alert-warning mb-4 text-start">
-                <div class="d-flex align-items-center mb-2">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <h6 class="mb-0">Attention Required</h6>
-                </div>
-                <div class="warning-items">
-                    {% if employees_without_bank > 0 %}
-                    <div class="warning-item">
-                        <i class="fas fa-university text-warning me-2"></i>
-                        <a href="{{ url_for('employees.directory', filter='no_bank') }}" class="text-decoration-none">
-                            {{ employees_without_bank }} employee(s) missing bank details
-                        </a>
-                    </div>
-                    {% endif %}
-                    {% if employees_without_manager > 0 %}
-                    <div class="warning-item">
-                        <i class="fas fa-user-tie text-warning me-2"></i>
-                        <a href="{{ url_for('employees.directory', filter='no_manager') }}" class="text-decoration-none">
-                            {{ employees_without_manager }} employee(s) without assigned manager
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
+<div class="card">
+    <div class="card-header">
+        <h1 class="card-title">
+            <i class="fas fa-money-bill-wave"></i> Payroll Dashboard
+        </h1>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ url_for('payroll.salary_structure_list') }}" class="btn btn-secondary">
+                <i class="fas fa-cog"></i> Manage Salary Structure
+            </a>
+            <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Generate Payroll
+            </a>
+        </div>
+    </div>
+    
+    <!-- Warnings Section -->
+    {% if employees_without_bank > 0 or employees_without_manager > 0 %}
+    <div class="alert alert-warning" style="margin: 1.5rem; border-radius: 8px;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>Attention Required</strong>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+            {% if employees_without_bank > 0 %}
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-university" style="color: #f59e0b;"></i>
+                <a href="{{ url_for('employees.directory', filter='no_bank') }}" style="color: #92400e; font-weight: 500; text-decoration: none;">
+                    {{ employees_without_bank }} employee(s) missing bank details
+                </a>
             </div>
             {% endif %}
-            
-            <!-- Payroll Tabs -->
-            <ul class="nav nav-pills mb-4" id="payrollTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="dashboard-tab" data-bs-toggle="tab" data-bs-target="#dashboard" type="button" role="tab">
-                        <i class="fas fa-chart-line me-2"></i>Dashboard
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link" id="payrun-tab" data-bs-toggle="tab" data-bs-target="#payrun" type="button" role="tab">
-                        <i class="fas fa-list me-2"></i>Payrun List
-                    </button>
-                </li>
-            </ul>
-            
-            <div class="tab-content" id="payrollTabsContent">
-                <!-- Dashboard Tab -->
-                <div class="tab-pane fade show active" id="dashboard" role="tabpanel">
-
-            <!-- Quick Actions -->
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-body text-start">
-                            <h5 class="card-title">Quick Actions</h5>
-                            <div class="d-flex gap-2 justify-content-start">
-                                <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
-                                    <i class="fas fa-plus-circle"></i> Generate Payroll
-                                </a>
-                                <a href="{{ url_for('payroll.salary_structure_list') }}"
-                                    class="btn btn-outline-primary">
-                                    <i class="fas fa-cash-register"></i> Manage Salary Structures
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {% if employees_without_manager > 0 %}
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-user-tie" style="color: #f59e0b;"></i>
+                <a href="{{ url_for('employees.directory', filter='no_manager') }}" style="color: #92400e; font-weight: 500; text-decoration: none;">
+                    {{ employees_without_manager }} employee(s) without assigned manager
+                </a>
             </div>
-
-            <!-- Payrun History -->
-            <div class="card mb-4">
-                <div class="card-body text-start">
-                    <h5 class="card-title">Payrun History</h5>
-                    {% if payruns %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Period</th>
-                                    <th>Payslips Generated</th>
-                                    <th>Created By</th>
-                                    <th>Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for payrun in payruns %}
-                                <tr>
-                                    <td>
-                                        <strong>
-                                            {% set month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-                                            'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
-                                            {{ month_names[payrun.month] }} {{ payrun.year }}
-                                        </strong>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-primary">{{ payrun.payslip_count }} payslips</span>
-                                    </td>
-                                    <td>{{ payrun.creator.name if payrun.creator else 'N/A' }}</td>
-                                    <td>{{ payrun.created_at.strftime('%d %b %Y') }}</td>
-                                    <td>
-                                        <a href="{{ url_for('payroll.generate', month=payrun.month, year=payrun.year) }}"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i> View
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No payrun history available.</p>
-                    {% endif %}
-                </div>
-            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+            
+    <!-- Tabs -->
+    <div style="border-bottom: 1px solid var(--border-color); padding: 0 1.5rem;">
+        <ul class="nav nav-tabs" style="border-bottom: none; gap: 1rem;">
+            <li class="nav-item">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" style="border: none; border-bottom: 2px solid transparent; padding: 1rem 0; background: none; color: var(--text-color);">
+                    <i class="fas fa-chart-line"></i> Overview
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="payrun-tab" data-bs-toggle="tab" data-bs-target="#payrun" type="button" style="border: none; border-bottom: 2px solid transparent; padding: 1rem 0; background: none; color: var(--text-color);">
+                    <i class="fas fa-list"></i> Payrun History
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="payslips-tab" data-bs-toggle="tab" data-bs-target="#payslips" type="button" style="border: none; border-bottom: 2px solid transparent; padding: 1rem 0; background: none; color: var(--text-color);">
+                    <i class="fas fa-file-invoice-dollar"></i> All Payslips
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="tab-content" style="padding: 1.5rem;">
+        <!-- Overview Tab -->
+        <div class="tab-pane fade show active" id="overview" role="tabpanel">
 
             <!-- Charts Section -->
-            <div class="row">
-                <div class="col-md-6 mb-4">
-                    <div class="card">
-                        <div class="card-body text-start">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title mb-0">Employer Cost</h5>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <button type="button" class="btn btn-outline-primary active"
-                                        onclick="showEmployerCostChart('monthly')">Monthly</button>
-                                    <button type="button" class="btn btn-outline-primary"
-                                        onclick="showEmployerCostChart('annual')">Annual</button>
-                                </div>
-                            </div>
-                            <div style="height: 300px;">
-                                <canvas id="employerCostChart"></canvas>
-                            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h5 style="margin: 0; font-weight: 600;">Employer Cost</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary active" onclick="showEmployerCostChart('monthly')">Monthly</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="showEmployerCostChart('annual')">Annual</button>
                         </div>
                     </div>
+                    <div style="height: 300px;">
+                        <canvas id="employerCostChart"></canvas>
+                    </div>
                 </div>
+                
+                <div style="background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem;">
+                    <h5 style="margin: 0 0 1rem 0; font-weight: 600;">Employee Count (Monthly)</h5>
+                    <div style="height: 300px;">
+                        <canvas id="employeeCountChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Payrun History Tab -->
+        <div class="tab-pane fade" id="payrun" role="tabpanel">
+            <h5 style="margin-bottom: 1rem; font-weight: 600;">
+                <i class="fas fa-history"></i> Recent Payruns
+            </h5>
+            {% if payruns %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Period</th>
+                            <th>Payslips Generated</th>
+                            <th>Created By</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payrun in payruns %}
+                        <tr>
+                            <td>
+                                <strong>
+                                    {% set month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+                                    {{ month_names[payrun.month] }} {{ payrun.year }}
+                                </strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-primary">{{ payrun.payslip_count }} payslips</span>
+                            </td>
+                            <td>{{ payrun.creator.name if payrun.creator else 'N/A' }}</td>
+                            <td>{{ payrun.created_at.strftime('%d %b %Y') }}</td>
+                            <td>
+                                <a href="{{ url_for('payroll.generate', month=payrun.month, year=payrun.year) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>No payrun history available.</p>
+                <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Generate First Payroll
+                </a>
+            </div>
+            {% endif %}
+        </div>
 
-                <div class="col-md-6 mb-4">
-                    <div class="card">
-                        <div class="card-body text-start">
-                            <h5 class="card-title">Employee Count (Monthly)</h5>
-                            <div style="height: 300px;">
-                                <canvas id="employeeCountChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        
+        <!-- All Payslips Tab -->
+        <div class="tab-pane fade" id="payslips" role="tabpanel">
+            <h5 style="margin-bottom: 1rem; font-weight: 600;">
+                <i class="fas fa-file-invoice-dollar"></i> All Payslips
+            </h5>
+            {% if payruns %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Period</th>
+                            <th>Gross Salary</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payrun in payruns %}
+                        {% for payroll in payrun.payrolls %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="employee-avatar" style="width: 32px; height: 32px; font-size: 0.75rem;">
+                                        {{ payroll.user.name[0].upper() }}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600;">{{ payroll.user.name }}</div>
+                                        <small style="color: #6b7280;">{{ payroll.user.employee_id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% set month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
+                                {{ month_names[payroll.month] }} {{ payroll.year }}
+                            </td>
+                            <td>₹{{ "{:,.2f}".format(payroll.gross_salary) }}</td>
+                            <td>₹{{ "{:,.2f}".format(payroll.net_salary) }}</td>
+                            <td>
+                                {% if payroll.status == 'Paid' %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Unpaid</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.25rem;">
+                                    <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-sm btn-outline-primary" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('payroll.download_pdf', payroll_id=payroll.id) }}" class="btn btn-sm btn-outline-success" title="Download PDF">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    {% if current_user.role in ['Admin', 'Payroll Officer'] and payroll.status == 'Unpaid' %}
+                                    <form method="POST" action="{{ url_for('payroll.mark_paid', payroll_id=payroll.id) }}" style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Mark as Paid">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-                </div>
+            {% else %}
+            <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                <i class="fas fa-file-invoice-dollar" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p>No payslips generated yet.</p>
+                <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Generate First Payroll
+                </a>
             </div>
-            
-            <!-- Payrun List Tab -->
-            <div class="tab-pane fade" id="payrun" role="tabpanel">
-                <div class="card">
-                    <div class="card-body text-start">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="card-title mb-0">All Payslips</h5>
-                            <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-plus"></i> Generate New Payroll
-                            </a>
-                        </div>
-                        
-                        {% if payruns %}
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Employee</th>
-                                        <th>Period</th>
-                                        <th>Gross Salary</th>
-                                        <th>Net Salary</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for payrun in payruns %}
-                                    {% for payroll in payrun.payrolls %}
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="employee-avatar-mini me-2">{{ payroll.user.name[0].upper() }}</div>
-                                                <div>
-                                                    <div class="fw-semibold">{{ payroll.user.name }}</div>
-                                                    <small class="text-muted">{{ payroll.user.employee_id }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            {% set month_names = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] %}
-                                            {{ month_names[payroll.month] }} {{ payroll.year }}
-                                        </td>
-                                        <td>₹{{ "{:,.2f}".format(payroll.gross_salary) }}</td>
-                                        <td>₹{{ "{:,.2f}".format(payroll.net_salary) }}</td>
-                                        <td>
-                                            {% if payroll.status == 'Paid' %}
-                                                <span class="badge bg-success">Paid</span>
-                                            {% else %}
-                                                <span class="badge bg-warning">Unpaid</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <div class="btn-group btn-group-sm">
-                                                <a href="{{ url_for('payroll.view', payroll_id=payroll.id) }}" class="btn btn-outline-primary">
-                                                    <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{{ url_for('payroll.download_pdf', payroll_id=payroll.id) }}" class="btn btn-outline-success">
-                                                    <i class="fas fa-download"></i>
-                                                </a>
-                                                {% if current_user.role in ['Admin', 'Payroll Officer'] and payroll.status == 'Unpaid' %}
-                                                <form method="POST" action="{{ url_for('payroll.mark_paid', payroll_id=payroll.id) }}" style="display: inline;">
-                                                    <button type="submit" class="btn btn-outline-success">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                                {% endif %}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-file-invoice-dollar fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">No payslips generated yet.</p>
-                            <a href="{{ url_for('payroll.generate') }}" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> Generate First Payroll
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
 <style>
-.warning-items {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.warning-item {
-    display: flex;
-    align-items: center;
-}
-
-.warning-item a {
-    color: #92400e;
-    font-weight: 500;
-}
-
-.warning-item a:hover {
-    color: #78350f;
-}
-
-.nav-pills .nav-link {
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    color: #64748b;
+.nav-tabs .nav-link {
+    color: #6b7280;
     font-weight: 500;
     transition: all 0.2s ease;
 }
 
-.nav-pills .nav-link:hover {
-    background-color: rgba(8, 145, 178, 0.1);
-    color: #0891b2;
+.nav-tabs .nav-link:hover {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color) !important;
 }
 
-.nav-pills .nav-link.active {
-    background-color: #0891b2;
-    color: white;
-}
-
-.employee-avatar-mini {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color) !important;
     font-weight: 600;
 }
 </style>

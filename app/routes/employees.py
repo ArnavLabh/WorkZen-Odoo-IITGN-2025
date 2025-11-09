@@ -46,7 +46,12 @@ def directory():
     search = request.args.get('search', '').strip()
     filter_type = request.args.get('filter', '').strip()
     
-    query = User.query.filter(User.role == 'Employee')
+    # Admin can see all users (Employee, HR Officer, Payroll Officer)
+    # Others can only see Employees
+    if current_user.role == 'Admin':
+        query = User.query.filter(User.role.in_(['Employee', 'HR Officer', 'Payroll Officer']))
+    else:
+        query = User.query.filter(User.role == 'Employee')
     
     # Apply filters
     if filter_type == 'no_bank':
@@ -89,19 +94,29 @@ def directory():
             if today_leave:
                 employee_statuses[employee.id] = 'on_leave'  # Airplane icon
             else:
-                # Check today's attendance - use live check-in/checkout status
+                # Check today's attendance - use live check-in/checkout status based on logs
                 try:
+                    from app.models import AttendanceLog
+                    
                     today_attendance = Attendance.query.filter_by(
                         user_id=employee.id,
                         date=today
                     ).first()
                     
-                    # Employee is checked in (green) if they have checked in but not checked out
-                    # Employee is checked out/absent (red) if they haven't checked in or have already checked out
-                    if today_attendance and today_attendance.check_in and not today_attendance.check_out:
-                        employee_statuses[employee.id] = 'present'  # Green dot - checked in
+                    if today_attendance:
+                        # Check the last log to determine current status
+                        last_log = AttendanceLog.query.filter_by(
+                            attendance_id=today_attendance.id
+                        ).order_by(AttendanceLog.id.desc()).first()
+                        
+                        # If last log is check_in, employee is currently checked in (green)
+                        # If last log is check_out or no logs, employee is not checked in (red)
+                        if last_log and last_log.log_type == 'check_in':
+                            employee_statuses[employee.id] = 'present'  # Green dot - checked in
+                        else:
+                            employee_statuses[employee.id] = 'absent'  # Red dot - checked out or not checked in
                     else:
-                        employee_statuses[employee.id] = 'absent'  # Red dot - checked out or not checked in
+                        employee_statuses[employee.id] = 'absent'  # Red dot - no attendance record
                 except (OperationalError, InternalError, ProgrammingError) as e:
                     # Transaction error - rollback and set default status
                     try:
@@ -249,8 +264,17 @@ def edit(user_id):
         elif email != user.email and User.query.filter_by(email=email).first():
             errors.append('Email already registered')
         
-        if role not in ['Employee', 'HR Officer', 'Payroll Officer', 'Admin']:
-            errors.append('Invalid role')
+        # Role validation
+        if current_user.role == 'Admin':
+            # Admin can change role to anything except Admin (to prevent accidental admin removal)
+            if user.role == 'Admin' and role != 'Admin':
+                errors.append('Cannot change role of Admin user. This is a security measure.')
+            elif role not in ['Employee', 'HR Officer', 'Payroll Officer', 'Admin']:
+                errors.append('Invalid role')
+        else:
+            # HR Officer can only keep role as Employee
+            if role != 'Employee':
+                errors.append('HR Officers can only manage Employee roles')
         
         if not date_of_joining:
             errors.append('Date of joining is required')
@@ -264,14 +288,16 @@ def edit(user_id):
         else:
             user.name = name
             user.email = email
-            user.role = role
+            # Only update role if user is not Admin or if keeping Admin role
+            if user.role != 'Admin':
+                user.role = role
             user.date_of_joining = datetime.strptime(date_of_joining, '%Y-%m-%d').date()
             user.contact_number = contact_number if contact_number else None
             user.address = address if address else None
             user.updated_at = datetime.utcnow()
             
             db.session.commit()
-            flash(f'Employee {name} updated successfully!', 'success')
+            flash(f'User {name} updated successfully!', 'success')
             return redirect(url_for('employees.directory'))
     
     return render_template('employees/edit.html', user=user)

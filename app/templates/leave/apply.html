@@ -79,6 +79,13 @@
 </div>
 
 <script>
+// Set minimum date to today for both start and end date
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').setAttribute('min', today);
+    document.getElementById('end_date').setAttribute('min', today);
+});
+
 function calculateDays() {
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
@@ -96,6 +103,15 @@ function calculateDays() {
         }
     }
 }
+
+// Update end date minimum when start date changes
+document.getElementById('start_date').addEventListener('change', function() {
+    const startDate = this.value;
+    if (startDate) {
+        document.getElementById('end_date').setAttribute('min', startDate);
+    }
+    calculateDays();
+});
 
 // Allow manual editing of allocation
 document.getElementById('allocation').addEventListener('click', function() {
