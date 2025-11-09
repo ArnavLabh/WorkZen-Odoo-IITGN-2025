@@ -1,34 +1,37 @@
-# WorkZen - Smart Human Resource Management System
+# WorkZen
 
-A comprehensive HRMS built with Flask, PostgreSQL, and modern web technologies.
+Enterprise Human Resource Management System for streamlined workforce operations.
 
-## Features
+## Overview
 
-- **User & Role Management**: Registration, login, and role-based access control (Admin, Employee, HR Officer, Payroll Officer)
-- **Attendance Management**: Mark attendance, track check-in/check-out, view attendance records
-- **Leave Management**: Apply for leaves, approve/reject leave requests
-- **Payroll Management**: Generate payroll, calculate salaries with deductions (PF, Professional Tax), generate payslips
-- **Reports**: Generate attendance, leave, and payroll reports
-- **Dashboard & Analytics**: Role-specific dashboards with statistics
-- **Multi-language Support**: English, Hindi, Gujarati (Flask-Babel)
-- **Dark/Light Theme**: Professional theme with toggle functionality
+WorkZen is a comprehensive HRMS platform that centralizes employee management, attendance tracking, leave administration, and payroll processing. Built with modern web technologies, it provides role-based access control and real-time analytics for efficient HR operations.
+
+## Demo Video - [Click here to watch](https://drive.google.com/file/d/1oXpIk190UBB12YKyUY-gY2cTifx5gl5K/view)
+
+## Key Features
+
+- **Role-Based Access Control** - Secure multi-role system (Admin, HR Officer, Payroll Officer, Employee)
+- **Attendance Management** - Real-time check-in/check-out tracking with detailed records
+- **Leave Management** - Automated leave application and approval workflows
+- **Payroll Processing** - Automated salary calculation with PF, professional tax, and custom deductions
+- **Analytics & Reporting** - Comprehensive dashboards and exportable reports for attendance, leaves, and payroll
+- **Multi-language Support** - English, Hindi, and Gujarati
+- **Responsive Design** - Dark/light theme with modern, intuitive interface
 
 ## Technology Stack
 
-- **Backend**: Flask 3.0.0
-- **Database**: PostgreSQL (NeonDB)
-- **Frontend**: HTML5, CSS3, JavaScript (vanilla)
-- **Icons**: Font Awesome
-- **Font**: Poppins (Google Fonts)
+- **Backend**: Flask 3.0.0, Python 3.8+
+- **Database**: PostgreSQL
+- **Frontend**: HTML5, CSS3, JavaScript
 - **Authentication**: Flask-Login (session-based)
-- **Internationalization**: Flask-Babel
+- **Deployment**: Vercel (serverless-ready)
 
-## Setup Instructions
+## Quick Start
 
 ### Prerequisites
 
 - Python 3.8+
-- PostgreSQL database (NeonDB connection string provided)
+- PostgreSQL database
 - pip
 
 ### Installation
@@ -39,7 +42,7 @@ git clone <repository-url>
 cd WorkZen-Odoo-IITGN-2025
 ```
 
-2. Create a virtual environment:
+2. Create and activate virtual environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -50,17 +53,15 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. Set up environment variables:
-Create a `.env` file in the root directory:
+4. Configure environment variables:
+Create a `.env` file:
 ```
 SECRET_KEY=your-secret-key-here
-DATABASE_URL=postgresql://neondb_owner:npg_AyIZVHqN23OB@ep-floral-feather-a1lmv2wi-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+DATABASE_URL=your-postgresql-connection-string
 ```
 
-5. Initialize the database:
+5. Initialize database:
 ```bash
-flask db init
-flask db migrate -m "Initial migration"
 flask db upgrade
 ```
 
@@ -71,65 +72,9 @@ python run.py
 
 The application will be available at `http://localhost:5000`
 
-## Database Models
+## Deployment
 
-- **User**: Employees, Admins, HR Officers, Payroll Officers
-- **Attendance**: Daily attendance records with check-in/check-out times
-- **Leave**: Leave applications and approvals
-- **Payroll**: Monthly payroll records with salary breakdown
-- **PayrollSettings**: Salary structure for each employee
-
-## Role-Based Access Control
-
-### Admin
-- Full access to all modules
-- Can create, read, update, and delete all data
-- Can manage user roles
-
-### Employee
-- View and mark own attendance
-- Apply for leaves
-- View own payslips
-- View employee directory (read-only)
-- Cannot access payroll or system settings
-
-### HR Officer
-- Create and update employee profiles
-- Monitor attendance records
-- Manage and allocate leaves
-- Generate attendance and leave reports
-- Cannot access payroll data
-
-### Payroll Officer
-- Approve/reject leave requests
-- Generate payroll and payslips
-- Generate all reports
-- View attendance (read-only)
-- Cannot create/modify employee data
-
-## Payroll Calculations
-
-- **Gross Salary** = Basic + HRA + Conveyance + Other Allowances
-- **PF Contribution** = Basic Salary × 12% (employee contribution)
-- **Professional Tax** = Fixed amount per month (default: ₹200)
-- **Net Salary** = Gross Salary - Total Deductions
-
-## Project Structure
-
-```
-WorkZen-Odoo-IITGN-2025/
-├── app/
-│   ├── __init__.py          # Flask app factory
-│   ├── models.py            # Database models
-│   ├── routes/              # Route blueprints
-│   ├── templates/           # Jinja2 templates
-│   ├── static/              # CSS, JS, images
-│   └── utils/               # Utility functions
-├── migrations/              # Database migrations
-├── config.py               # Configuration
-├── requirements.txt        # Python dependencies
-└── run.py                  # Application entry point
-```
+The application is configured for serverless deployment on Vercel. Configure environment variables in your deployment platform and deploy using the provided `vercel.json` configuration.
 
 ## License
 
